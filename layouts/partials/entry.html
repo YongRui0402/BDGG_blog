@@ -20,11 +20,11 @@
       <span class="entry-desc">{{ $desc }}</span>
     </span>
   </a>
-  {{- /* 標籤先顯示成文字，標籤頁做好之後再變成連結 */}}
-  {{- with .Params.tags }}
+  {{- /* 連結的寫法和文章頁相同，理由見 single.html */}}
+  {{- with .GetTerms "tags" }}
   <p class="entry-tags">
     {{- range . }}
-    <span>#{{ . }}</span>
+    <a href="{{ .RelPermalink }}" rel="tag">#{{ .Title }}</a>
     {{- end }}
   </p>
   {{- end }}

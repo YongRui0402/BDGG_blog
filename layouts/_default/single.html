@@ -68,11 +68,12 @@
   </aside>
   {{- end }}
 
-  {{- /* 標籤先顯示成文字，標籤頁做好之後再變成連結 */}}
-  {{- with .Params.tags }}
+  {{- /* 連結向 Hugo 要（.GetTerms 回傳標籤頁，順序和 front matter 相同），不自己用標籤名稱組網址：
+         C# 的頁面在 /tags/c%23/，用 urlize 組出來的是 /tags/c/。 */}}
+  {{- with .GetTerms "tags" }}
   <p class="tags">
     {{- range . }}
-    <span>#{{ . }}</span>
+    <a href="{{ .RelPermalink }}" rel="tag">#{{ .Title }}</a>
     {{- end }}
   </p>
   {{- end }}
