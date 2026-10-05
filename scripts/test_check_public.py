@@ -73,6 +73,11 @@ class CheckPublicTest(unittest.TestCase):
         self.write("about/index.html", '<a href="">不存在的選單項目</a>')
         self.assert_blocked("about/index.html", "空的")
 
+    def test_valueless_link_is_blocked(self):
+        # --minify 之後 href="" 連等號都不剩;選單指向草稿時成品裡就是這個樣子
+        self.write("about/index.html", "<a href>不存在的選單項目</a>")
+        self.assert_blocked("about/index.html", "空的")
+
     def test_relative_and_percent_encoded_links_resolve(self):
         self.write("tags/中文/index.html", '<a href="../../about/">關於</a>')
         self.write("about/index.html", '<a href="/blog/tags/%E4%B8%AD%E6%96%87/">中文</a>')

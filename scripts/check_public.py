@@ -74,8 +74,8 @@ class PageScan(HTMLParser):
         if tag == "meta" and (attr.get("http-equiv") or "").lower() == "refresh":
             self.is_redirect = True
         for name, value in attrs:
-            if value is None:
-                continue
+            # --minify 會把 href="" 縮成沒有值的 href,解析出來是 None,要當成空字串一起擋
+            value = value or ""
             if name in ("href", "src"):
                 self.urls.append(value.strip())
             elif name == "class" and DRAFT_CLASS in value.split():
