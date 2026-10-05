@@ -6,7 +6,7 @@ BDGG 的部落格,用 [Hugo](https://gohugo.io/) 產生,由 GitHub Actions 建�
 - 站台:<https://yongrui0402.github.io/BDGG_blog/>
 - 開發紀錄:[`docs/requirements.md`](docs/requirements.md)(為什麼這樣做)、[`docs/features.md`](docs/features.md)(一項一項怎麼做)
 
-站還在搭建中,功能照 `docs/features.md` 的順序一項一項加上來。目前可以發文與閱讀;分區列表、標籤、RSS、搜尋還沒做。
+站還在搭建中,功能照 `docs/features.md` 的順序一項一項加上來。目前可以發文、閱讀,也可以用 RSS 訂閱(<https://yongrui0402.github.io/BDGG_blog/index.xml>);分區列表、標籤、搜尋還沒做。
 
 ## 在本機跑
 
@@ -50,6 +50,8 @@ push 之後一分鐘內(第一篇實測 24 秒),文章會出現在 `https://yong
   `[字](/learning/other-post/)`、`[字](other-post.md)`。寫錯的連結 `make check` 會擋下來。
 - **圖片**放在文章旁邊:把文章改成目錄 `content/learning/my-post/index.md`,圖放進同一個目錄,
   內文寫 `![說明](圖檔.png)`。
+- **`description` 寫一句話**:它會出現在搜尋結果、貼到社群時的預覽,以及 RSS 閱讀器裡。
+  沒寫的話會取內文開頭的 160 個字。
 - **程式碼區塊**記得標語言(` ```bash `、` ```ts `),才會上色。
 - front matter 各欄位的用途寫在範本 [`archetypes/default.md`](archetypes/default.md) 的註解裡。
 

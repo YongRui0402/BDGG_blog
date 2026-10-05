@@ -25,7 +25,7 @@
 | 1 | push 就上線 | — | [x] | 2026-10-05 | `fb80377` |
 | 2 | 基本版面 | 1 | [x] | 2026-10-05 | `5ce4506` |
 | 3 | 文章頁的閱讀體驗 | 2 | [x] | 2026-10-05 | `5cf28ba` |
-| 4 | 被找到與被訂閱 | 3 | [ ] | | |
+| 4 | 被找到與被訂閱 | 3 | [x] | 2026-10-05 | `f02894e` |
 | 5 | 分區與首頁列表 | 3 | [ ] | | |
 | 6 | 標籤 | 5 | [ ] | | |
 | 7 | 關於頁 | 3 | [ ] | | |
@@ -149,13 +149,13 @@
 - **`baseof`**:沒有 `data-baseurl`(功能 8 要加時寫 `data-baseurl="{{ "" | relURL }}"`);
   複製程式碼的腳本已在功能 3 加上;`{{ block "scripts" . }}` 已經在,
   功能 5、8 的版型直接 `{{ define "scripts" }}` 就會輸出。
-- **`head`**:目前只有標題、作者、兩份樣式、favicon、GA4。說明文字、canonical、
-  社群分享的 meta、feed 宣告、`article:published_time` 都留給功能 4。
-  分享圖固定寫 `{{ "og-default.png" | absURL }}`;原版型依封面與 front matter `image` 換圖的那一段不搬。
+- **`head`**:標題、說明文字、作者、feed 宣告、canonical、社群分享的 meta、兩份樣式、favicon、GA4
+  (說明文字以下到分享 meta 是功能 4 加的,見「被找到與被訂閱(功能 4)」)。
+  分享圖固定寫 `{{ "og-default.png" | absURL }}`;原版型依封面與 front matter `image` 換圖的那一段沒有搬。
 - **`header`**:選單是空的時候不輸出 `<nav>`。目前選單只有「首頁」一項 ——
   原架構沒有這一項(站名本身就是回首頁的連結),這裡先放著讓選單看得到。
   功能 5 掛上分區時決定要不要留。
-- **`footer`**:只有站名與 GitHub 連結。「標籤」連結功能 6 加,「RSS」連結功能 4 加。
+- **`footer`**:站名、GitHub 連結、RSS 連結(功能 4)。「標籤」連結功能 6 加。
 - **`404`**:只有說明與回首頁。分區連結等功能 5、搜尋框等功能 8。
   這一頁會出現在任意深度的網址上,連結一定要是從網域根算起的路徑
   (`.RelPermalink`、`"x/" | relURL` 都是),不能寫相對路徑。
@@ -197,7 +197,7 @@
   **這三個值改了就要重跑,並把新的圖一起 commit** —— 建置時不會自動重畫。
   需要 Pillow 與 Noto Sans CJK 字型;不在 `make check` 裡,CI 不依賴它。
   同樣的輸入重跑,產出的檔案逐位元相同。
-- 圖現在還沒有任何頁面引用。功能 4 加上 `og:image` 時,成品檢查要擴充到 `<meta content>` 裡的網址。
+- 每一頁的 `og:image` 都指向這張圖(功能 4);成品檢查會驗那個網址是完整網址而且檔案存在。
 
 **怎麼驗「360px 沒有橫向捲動」與深淺色**
 
@@ -250,7 +250,6 @@
 
 **之後各項要接的地方**
 
-- **功能 4**:文章的 `description` 目前沒有任何版型在用,等 meta 與 RSS。
 - **功能 5**:① 把 `"section"` 從 `disableKinds` 拿掉;② `single.html` 的分區從 `<span class="sect">` 改成連結,
   用 `(site.GetPage (printf "/%s" .Section)).RelPermalink`(原版型是 `"/x/" | relURL`,子路徑下會壞);
   ③ `index.html` 的暫時清單(`<section class="recent">`,只列分區底下的文章)整份換掉;
@@ -281,6 +280,110 @@
 - **`.TableOfContents`** 會輸出一個 `<nav id="TableOfContents">`,外面又包了一層 `<nav class="toc">`,
   是原版型的寫法,沒有動。
 
+### 被找到與被訂閱(功能 4,2026-10-05)
+
+**這一項定下的事**
+
+- **feed 在 `/index.xml`**,給最新的 30 篇,每篇有說明與全文。只收分區底下的文章,
+  `content/` 根目錄的單頁(之後的關於、搜尋)不進 feed。
+- **只有首頁出 feed**。`hugo.toml` 的 `[outputs]` 把 `section`、`taxonomy`、`term` 明寫成只出 HTML。
+  實測:不寫的話,分區頁一打開,每個分區各出一份 `index.xml`,內容都是同一份全站 feed
+  (`rss.xml` 收的是全站文章)。**功能 5、6 打開分區與標籤時不要動這一段;功能 8 要加搜尋索引時,
+  只改 `home` 那一行**(`["html", "rss", "json"]`)。
+- **說明文字只有一個來源:`partials/description.html`**。文章用 front matter 的 `description`,
+  沒寫就取內文開頭;不是文章的頁面(首頁、404,以及之後的分區頁、標籤頁)用 `hugo.toml` 的站台說明。
+  超過 160 個字就截斷。它回傳的是**沒有跳脫過的純文字**,用的地方各自處理:
+  - HTML 屬性(`<meta content="…">`)直接放,Hugo 會自動跳脫
+  - RSS 的 `<description>` 要寫 `{{ partial "description.html" . | htmlEscape }}` ——
+    閱讀器把這一欄當 HTML 讀,所以要多跳脫一層
+  - 功能 5 的摘要卡、功能 8 的搜尋索引要用說明文字時,從這裡拿,不要另外寫一套
+- **feed 的宣告每一頁都放**(`<link rel="alternate">`,用 `site.Home.OutputFormats.Get "rss"`),
+  讀者把任何一篇的網址貼進閱讀器都找得到。頁尾的 RSS 連結也用同一個來源。
+- **404 頁不輸出 canonical 與分享用的 meta**:它沒有自己的網址。
+- **分享的標題不加站名**(`og:title` 是文章標題,站名在 `og:site_name`);分享圖固定是 `og-default.png`,
+  圖的替代文字是「站名:標語」。`twitter:card` 是 `summary_large_image`,其餘欄位平台會退而讀 `og:`。
+- **sitemap 用 Hugo 內建的版型**(`/sitemap.xml`),沒有自訂。之後新增的頁面(分區、標籤、關於)會自動進去,
+  成品檢查會驗每一個網址。
+
+**robots.txt 目前沒有作用(規格沒料到)**
+
+- 爬蟲只讀**網域根**的 robots.txt(RFC 9309 第 2.3 節:規則必須放在「the top-level path of the service」)。
+  這個站的檔落在 `/BDGG_blog/robots.txt`;網域根 `yongrui0402.github.io/robots.txt` 實測是 404,
+  而且那個位置屬於另一個 repo(`YongRui0402.github.io`,目前不存在),這裡管不到。
+- 所以它裡面那行 `Sitemap:` 傳不到搜尋引擎手上。檔案照規格留著(內容正確、成本是一個 5 行的版型,
+  站台之後若換成自己的網域會直接生效),限制寫在版型開頭的註解裡。
+- **要讓搜尋引擎拿到 sitemap,得由站主到站長工具提交**
+  `https://yongrui0402.github.io/BDGG_blog/sitemap.xml`。Google Search Console 要用「網址前置字元」資源
+  (網址填到 `/BDGG_blog/`);依 Google 的說明文件,這種資源可以用 HTML 標記或上傳 HTML 檔驗證,
+  兩種都能放在這個 repo 裡。這一步沒有做、也沒有實際操作過,等站主決定。
+  不提交的話,搜尋引擎仍然可以從別處的連結爬進來,每一頁的 canonical 也是對的,只是比較慢。
+
+**和原版型不同的地方(都是實測到問題才改的)**
+
+- **原版型的 `rss.xml` 原樣搬過來,W3C Feed Validator 是「無效、3 個錯誤」**(只把分區條件放寬,其餘不動):
+  - `managingEditor`、`webMaster` 填的是筆名,規範要求電子郵件 → 兩欄拿掉,作者改放 `dc:creator`
+  - 摘要含引號或刪節號時輸出 `&rsquo;` 這類沒宣告過的實體,**整份 XML 解析不了**(`.Summary | plainify`
+    留著 HTML 實體)→ 先 `htmlUnescape` 還原成字元
+  - `atom:link rel="self"` 寫的是 `.Permalink`,在 RSS 版型裡那是**首頁**的網址,不是 feed 的 →
+    改成 `(.OutputFormats.Get "rss").Permalink`
+- **原版型只收三個分區**(`pitfalls`、`decisions`、`projects`)。這個站的第一篇在 `learning`,原樣搬的話 feed 是空的。
+  改成收所有分區。
+- **全文裡的站內連結與圖片換成完整網址**。Hugo 產出的是 `/BDGG_blog/…`(從網域根算起),
+  閱讀器不一定會補上網域。做法是把內文裡的 `="/BDGG_blog/` 換成 `="https://yongrui0402.github.io/BDGG_blog/`。
+  頁內錨點 `[字](#標題)` 也已經被功能 3 的設定改寫成完整路徑,所以一併處理到了。
+- **feed 開頭多了 XML 宣告**(原版型沒有)。GitHub Pages 回 `index.xml` 的 Content-Type 是 `application/xml`,
+  沒有帶 charset,編碼要靠宣告。
+- **`<category>` 用分區的中文名稱**(原本是 `learning` 這種目錄名)。
+- **首頁的說明**:原寫法 `or .Description .Summary site.Params.description` 會先取到首頁的內文,
+  說明變成「這個站還在搭建中。」。現在首頁固定用站台說明。
+- **說明文字不再跳脫兩次**:原寫法在內文開頭有 `&` 或引號時,`<meta>` 裡會出現 `&amp;rsquo;`。
+  另外沒有用 `truncate` —— 它會順手做一次 HTML 跳脫,回傳的不是純文字,在 RSS 裡會變成跳脫三次。
+- **`article:published_time` 只有文章才輸出**(原寫法 `with .Date` 連首頁都有)。
+- **`robots.txt` 的非正式建置分支沒有搬**:那是舊產線的預覽環境擋爬蟲用的。
+
+**成品檢查現在多看的東西**(`scripts/check_public.py`)
+
+- 寫了主機的站內連結(canonical、feed 宣告)要和 `baseURL` 同協定,`http://` 會被擋
+- `<meta property="og:url">`、`<meta property="og:image">`:站台底下的完整網址,而且檔案存在
+- RSS:是合法的 XML;`<link>`、`<guid>`、內文裡的站內連結與圖片都是完整網址且指向存在的檔案;
+  內文不得有相對路徑;`atom:link rel="self"` 要等於 feed 實際的位置
+- `sitemap.xml` 的每個 `<loc>`、`robots.txt` 裡的每個網址:https、在子路徑底下、指向存在的檔案
+- 規格寫的是「sitemap 與 robots 不得含 `http://`」。照字面在檔案裡找字串行不通 ——
+  sitemap 的 `xmlns="http://www.sitemaps.org/…"` 是規範規定的命名空間名稱,每一份合法的 sitemap 都有。
+  所以檢查的是上面那些**值**。
+- 通過時的訊息多一個數字「N 個給站外讀的網址」。目前是 11 個;之後加頁面這個數字會跟著漲,
+  突然變少就代表有東西沒被掃到。
+- 之後的功能若把網址放到新的地方(`index.json` 裡的文章網址、`data-baseurl`),一樣要擴充,
+  並在 `scripts/test_check_public.py` 加一個會被擋的假成品。現在有 37 個測試。
+
+**之後各項要接的地方**
+
+- **功能 5**:分區頁、「最新」頁會自動進 sitemap、自動有 canonical 與分享 meta,說明用站台說明。
+  想讓分區頁有自己的說明(原架構 `_index.md` 的 `blurb`),改 `partials/description.html` 一處就好。
+  `summaryLength` 沒有設定(Hugo 預設 70);說明文字自己截在 160 字,不受它影響。
+- **功能 6**:標籤頁同上。中文的網址在 sitemap 裡是百分比編碼(用一篇中文檔名的假文章看過:
+  `<loc>…/learning/%E4%B8%AD%E6%96%87…/</loc>`),成品檢查會解碼後對檔案,那一次是通過的。
+- **功能 7**:關於頁在 `content/` 根目錄,不會進 feed,會進 sitemap。**front matter 要寫 `description`**,
+  不寫的話分享預覽會取內文開頭。它的 `og:type` 是 `website`,不輸出發布時間。
+- **功能 8**:搜尋頁同樣不進 feed。`index.json` 是給站內腳本讀的,裡面的網址用相對於網域根的路徑即可,
+  和 feed 不一樣。
+
+**實測到的行為**
+
+- **W3C Feed Validator**:部署後以公開網址驗,**有效、0 個錯誤、0 個警告**。
+  部署前用「直接輸入」驗會多一個 `SelfDoesntMatchLocation` 警告(驗證器不知道這份內容來自哪個網址),不是問題。
+  刁鑽的測試 feed(標題含 `<script>`、`&`、引號;內文有站內連結、圖片、錨點;程式碼裡有 `]]>`)也是有效。
+- **線上與本機逐檔比對**:三次 push 之後線上 11 個檔案和本機 `make check` 的成品逐位元相同。
+- **線上的 15 個對外網址**(sitemap、robots、兩頁的 canonical / feed 宣告 / `og:url` / `og:image`、
+  feed 裡的連結)全部以 `https://yongrui0402.github.io/BDGG_blog/` 開頭,而且都回 200。
+- **草稿**:一篇 `draft: true` 的假文章,正式建置後 feed 與 sitemap 裡都沒有;反過來用 `--buildDrafts` 建,
+  兩邊都出現、成品檢查擋下來。日期在未來的文章與根目錄的單頁也不在 feed 裡(未來的文章連 sitemap 都不在)。
+- **超過 30 篇**:暫存區的測試站放了 36 篇已發布的文章,feed 是 30 個項目,sitemap 是全部。
+- **CI**:三次 push 各跑一次,24 到 28 秒,全部成功。
+- **頁尾**:多了 RSS 連結之後,360px 寬仍是一行(截圖看過)。
+- **社群分享的預覽沒有在真的平台上看過**。驗的是 meta 的值正確、圖的網址回 200 且是 1200×630 的 PNG;
+  各平台實際怎麼顯示,要貼一次才知道(LINE、Discord、Facebook 都會快取第一次抓到的結果)。
+
 ### 建置與成品檢查(功能 1)
 
 - **`make check`** = 刪掉 `public/` → `hugo --gc --minify --panicOnWarning` → 檢查器的對照組測試 → 成品檢查。
@@ -292,14 +395,15 @@
   原版型裡若有 `.Site.LanguageCode`、`.Language.LanguageCode` 這類寫法,搬進來時要改。
 - **`make preview`** 帶 `--buildDrafts --renderToMemory`:看得到草稿,而且不寫進 `public/`。
 - **成品檢查**(`scripts/check_public.py`)看的是每個 HTML 的 `href` 與 `src`、class 含 `draft-tag` 的元素、
-  以及所有檔案裡的 `192.168.`。之後的功能要注意:
-  - 網址若放在別的屬性(`srcset`、`data-baseurl`、`<meta content>` 裡的分享圖),檢查器看不到,要跟著擴充
+  所有檔案裡的 `192.168.`,以及功能 4 加上的「給站外讀的網址」(分享 meta、feed、sitemap、robots,
+  見「被找到與被訂閱(功能 4)」)。之後的功能要注意:
+  - 網址若放在別的屬性(`srcset`、`data-baseurl`),檢查器看不到,要跟著擴充
   - 草稿標記是 `layouts/_default/single.html` 裡 class 為 `draft-tag` 的元素;要改名就連檢查器與它的測試一起改
   - 新增一種要擋的情況,就在 `scripts/test_check_public.py` 加一個假成品,確認真的會擋
   - `--minify` 會拿掉屬性的引號(`class=draft-tag`),所以不能用 `grep 'class="draft-tag"'` 這種寫法檢查成品
 - **還沒做到的頁面種類先關掉**(`hugo.toml` 的 `disableKinds`),輪到時再打開:
-  RSS、sitemap、`robots.txt` → 功能 4;`section`(分區列表頁,功能 3 關上的)→ 功能 5;
-  `taxonomy`、`term` → 功能 6。(`404` 已在功能 2 打開。)
+  `section`(分區列表頁,功能 3 關上的)→ 功能 5;`taxonomy`、`term` → 功能 6。
+  (`404` 已在功能 2 打開;RSS、sitemap、`robots.txt` 已在功能 4 打開。)
 - 功能 1 的測試頁 `content/link-test.md` 與選單的「連結測試」已在功能 2 拿掉。
 - **workflow 只用 GitHub 官方的三個 action**(`checkout@v7`、`upload-pages-artifact@v5`、`deploy-pages@v5`),
   不覆蓋 `baseURL`(直接用 `hugo.toml` 的值)。
@@ -452,6 +556,7 @@
 - RSS feed 通過 W3C Feed Validator
 - sitemap、robots、canonical、分享圖的網址都是 https 且帶 `/BDGG_blog/`
 - 成品檢查多一項:sitemap 與 robots 不得含 `http://` 的絕對網址
+  (實作時改成檢查 `<loc>` 與 `Sitemap:` 的值 —— sitemap 的 `xmlns` 本身就是 `http://` 開頭,照字面找字串每次都會擋)
 - 草稿不出現在 feed 與 sitemap 裡
 
 ---
