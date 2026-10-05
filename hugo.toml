@@ -7,8 +7,8 @@ hasCJKLanguage = true
 # 文章日期沒寫時區時用這個,本機與 CI 才會建出一樣的成品
 timeZone = "Asia/Taipei"
 
-# 還沒做到的頁面種類先關掉,輪到那一項功能時再打開:標籤 → 功能 6
-disableKinds = ["taxonomy", "term"]
+# 標籤頁的標題照作者寫的樣子顯示。預設(true)會把第一個字母改成大寫:mod → Mod、iOS → IOS。
+capitalizeListTitles = false
 # 版型在 layouts/robots.txt。sitemap 用 Hugo 內建的版型,輸出在 /sitemap.xml
 enableRobotsTXT = true
 
@@ -33,7 +33,12 @@ enableRobotsTXT = true
   # 文章超過這個月數沒更新,文首會自動掛上「內容可能已過期」的提示
   staleAfterMonths = 12
 
-# 分類頁一頁列 10 篇。超過一頁時排序按鈕不會出現(它只能重排當頁的項目)。
+# 只有標籤一種分類法。不寫的話 Hugo 預設還會多產生一個空的 /categories/。
+# 標籤總覽在 /tags/,每個標籤的頁面在 /tags/<標籤>/。
+[taxonomies]
+  tag = "tags"
+
+# 分類頁與標籤頁一頁列 10 篇。超過一頁時排序按鈕不會出現(它只能重排當頁的項目)。
 [pagination]
   pagerSize = 10
 

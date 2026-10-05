@@ -6,7 +6,7 @@ BDGG 的部落格,用 [Hugo](https://gohugo.io/) 產生,由 GitHub Actions 建�
 - 站台:<https://yongrui0402.github.io/BDGG_blog/>
 - 開發紀錄:[`docs/requirements.md`](docs/requirements.md)(為什麼這樣做)、[`docs/features.md`](docs/features.md)(一項一項怎麼做)
 
-站還在搭建中,功能照 `docs/features.md` 的順序一項一項加上來。目前可以發文、閱讀、依分區瀏覽,也可以用 RSS 訂閱(<https://yongrui0402.github.io/BDGG_blog/index.xml>);標籤頁、關於頁、搜尋還沒做。
+站還在搭建中,功能照 `docs/features.md` 的順序一項一項加上來。目前可以發文、閱讀、依分區或標籤瀏覽,也可以用 RSS 訂閱(<https://yongrui0402.github.io/BDGG_blog/index.xml>);關於頁、搜尋還沒做。
 
 ## 在本機跑
 
@@ -45,6 +45,10 @@ push 之後一分鐘內(第一篇實測 24 秒),文章會出現在 `https://yong
   發出第一篇之後它會自己出現,不必改設定。
 - **分區的介紹**(選填)寫在 `content/<分區>/_index.md`:front matter 的 `blurb` 是首頁卡片上的一句話,
   內文會顯示在該分區列表頁的標題底下。
+- **標籤**寫在 front matter 的 `tags`,中文、英文都可以:`tags: [Claude Code, 踩坑]`。每個標籤有自己的頁面,
+  全部的標籤在 <https://yongrui0402.github.io/BDGG_blog/tags/>。畫面上顯示的就是你寫的樣子(大小寫不會被改)。
+  **同一個標籤每一篇要寫得一樣**:`MCP` 與 `mcp`、`GitHub Pages` 與 `github-pages` 會被當成同一個標籤,
+  兩種寫法並存時 `make check` 會失敗,並指出是哪兩篇。
 - **網址**是 `/<分區>/<slug>/`。`slug` 預設等於檔名,用英文小寫與連字號;發布之後不要再改。
 - **`draft: true` 的文章不會上線**,但這個 repo 是公開的,原稿在 GitHub 上仍然看得到。
 - **日期在未來的文章不會出現**,而且建置不會報錯。範本填的是開檔當下的時間,手改日期時留意這一點。

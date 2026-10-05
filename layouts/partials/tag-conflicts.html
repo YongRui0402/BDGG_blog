@@ -1,0 +1,29 @@
+{{- /* 兩種寫法落在同一個標籤頁時，讓建置失敗並指出是哪兩篇。
+       用法：{{ partial "tag-conflicts.html" . }}（只在標籤總覽頁呼叫，一次建置跑一次）
+
+       Hugo 依標籤的網址歸戶，下面三種都會落在同一頁，而且建置不會報錯：
+         MCP 與 mcp      只差大小寫
+         A B 與 a-b      空白會變成連字號
+         a&b 與 ab       不能放進網址的符號會被拿掉
+       合在一起之後，頁面上顯示哪一種寫法每次建置不一定相同（實測連建三次出現兩種結果），
+       本機與 CI 的成品就會對不上。所以不挑一個，直接請作者統一。 */ -}}
+{{- $names := dict -}}
+{{- $files := dict -}}
+{{- range site.RegularPages -}}
+  {{- $file := printf "content/%s" .File.Path -}}
+  {{- range .Params.tags -}}
+    {{- $name := string . -}}
+    {{- /* 用 GetPage 問這個寫法會落在哪一頁。site.Taxonomies.tags.Get 在「A B 與 a-b」這一種會找不到 */ -}}
+    {{- with site.GetPage (printf "/tags/%s" $name) -}}
+      {{- $url := .RelPermalink -}}
+      {{- with index $names $url -}}
+        {{- if ne . $name -}}
+          {{- errorf "標籤「%s」（%s）與「%s」（%s）會落在同一個標籤頁 %s，請統一成同一種寫法" . (index $files $url) $name $file $url -}}
+        {{- end -}}
+      {{- else -}}
+        {{- $names = merge $names (dict $url $name) -}}
+        {{- $files = merge $files (dict $url $file) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

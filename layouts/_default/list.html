@@ -1,7 +1,13 @@
 {{ define "main" }}
+{{- /* 這一份同時是分類頁與單一標籤的頁面（/tags/<標籤>/）。標籤頁的標題帶 #，
+       底下多一行篇數與回標籤總覽的連結。 */}}
+{{- $isTerm := eq .Kind "term" }}
 <header class="list-head">
-  <h1>{{ partial "sect-icon.html" .Section }}{{ .Title }}</h1>
+  <h1>{{ partial "sect-icon.html" .Section }}{{ if $isTerm }}#{{ end }}{{ .Title }}</h1>
   {{- with .Content }}<div class="content intro">{{ . }}</div>{{ end }}
+  {{- if $isTerm }}
+  <p class="muted">{{ len .Pages }} 篇 · <a href="{{ .Parent.RelPermalink }}">全部標籤</a></p>
+  {{- end }}
 </header>
 
 {{- $pages := .Paginator.Pages }}

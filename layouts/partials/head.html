@@ -5,11 +5,15 @@
   {{- /* 404 頁的 .Title 是 Hugo 內建的英文字串，換成和頁面上一樣的中文 */}}
   {{- $pageTitle := cond (eq .Kind "404") "找不到這個頁面" .Title }}
 
-  {{- /* 分類頁超過一頁時，第 2 頁以後有自己的網址，但 .Permalink 永遠是第 1 頁的。
+  {{- /* 標籤頁的標題和頁面上的 h1 一樣帶 #，搜尋結果裡才看得出「mod」是一個標籤 */}}
+  {{- if eq .Kind "term" }}{{ $pageTitle = printf "#%s" .Title }}{{ end }}
+
+  {{- /* 分類頁與標籤頁超過一頁時，第 2 頁以後有自己的網址，但 .Permalink 永遠是第 1 頁的。
          不換掉的話，第 2 頁的 canonical 會說「我是第 1 頁的複本」。
-         .Paginator 只能在會分頁的頁面種類上取，在別種頁面上取會讓建置失敗。 */}}
+         .Paginator 只能在會分頁的頁面種類上取，在別種頁面上取會讓建置失敗。
+         標籤總覽（taxonomy）不分頁，不要加進來。 */}}
   {{- $url := .Permalink }}
-  {{- if eq .Kind "section" }}
+  {{- if in (slice "section" "term") .Kind }}
   {{- with .Paginator }}
   {{- if gt .PageNumber 1 }}
   {{- $url = .URL | absURL }}

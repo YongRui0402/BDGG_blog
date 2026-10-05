@@ -1,0 +1,22 @@
+{{ define "main" }}
+{{- /* 標籤總覽。讀者從頁尾，或從任何一個標籤頁的「全部標籤」過來。
+       用的文章多的排前面，篇數相同再依名稱，讓常用的標籤浮在上面。 */}}
+{{- partial "tag-conflicts.html" . }}
+<header class="list-head">
+  <h1>{{ .Title }}</h1>
+  {{- with .Content }}<div class="content intro">{{ . }}</div>{{ end }}
+</header>
+
+{{- $terms := .Data.Terms.ByCount }}
+{{- if $terms }}
+<p class="muted">共 {{ len $terms }} 個標籤。數字是掛了幾篇。</p>
+<div class="chips tagcloud">
+  {{- range $terms }}
+  <a class="chip" href="{{ .Page.RelPermalink }}">{{ .Page.Title }}<span class="chip-n">{{ .Count }}</span></a>
+  {{- end }}
+</div>
+{{- else }}
+<p class="muted">還沒有標籤。</p>
+<p><a href="{{ site.Home.RelPermalink }}">回首頁看最新的文章</a></p>
+{{- end }}
+{{ end }}

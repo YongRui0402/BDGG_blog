@@ -111,7 +111,9 @@ h1 .sect-icon { width: .82em; height: .82em; color: var(--fg-muted); }
 /* ---------- 標籤總覽 ---------- */
 
 .tagcloud { margin: 1rem 0 2rem; }
-.tagcloud .chip { text-decoration: none; }
+/* anywhere:很長、中間沒有空白的標籤也要能折行。body 的 break-word 不夠 ——
+   它不會讓這顆藥丸的最小寬度變小,360px 寬時整頁會被撐出橫向捲軸。 */
+.tagcloud .chip { text-decoration: none; overflow-wrap: anywhere; }
 .searchhint { font-size: .82rem; margin: -.6rem 0 1rem; }
 
 /* ---------- 分類快選（搜尋頁） ---------- */
