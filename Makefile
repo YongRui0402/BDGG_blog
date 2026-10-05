@@ -11,9 +11,10 @@ HUGO_SUMS    := hugo_$(HUGO_VERSION)_checksums.txt
 HUGO_RELEASE := https://github.com/gohugoio/hugo/releases/download/v$(HUGO_VERSION)
 HUGO         := .hugo-bin/hugo-$(HUGO_VERSION)
 
-.PHONY: help preview build check clean
+.PHONY: help new preview build check clean
 
 help:
+	@echo "make new POST=<分區>/<檔名>  依範本開一篇新文章,例如 make new POST=learning/my-post"
 	@echo "make preview  本機預覽(含草稿),存檔即重新整理"
 	@echo "make build    建置到 public/"
 	@echo "make check    建置 + 成品檢查;push 之前跑這個,CI 跑的也是這個"
@@ -27,6 +28,11 @@ $(HUGO):
 	tar -xzf .hugo-bin/$(HUGO_TARBALL) -C .hugo-bin hugo
 	mv .hugo-bin/hugo $@
 	rm .hugo-bin/$(HUGO_TARBALL) .hugo-bin/$(HUGO_SUMS)
+
+# 依 archetypes/default.md 開一篇新文章。檔名會成為網址的最後一段,用英文小寫與連字號。
+new: $(HUGO)
+	@test -n "$(POST)" || { echo "用法:make new POST=<分區>/<檔名>,例如 make new POST=learning/my-post"; exit 1; }
+	$(HUGO) new content $(POST).md
 
 # --renderToMemory:預覽不寫進 public/,免得帶草稿的頁面留在成品目錄裡
 preview: $(HUGO)
