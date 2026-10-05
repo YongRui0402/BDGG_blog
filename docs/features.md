@@ -23,7 +23,7 @@
 | # | 功能需求 | 前置 | 狀態 | 完成日期 | commit |
 |---|---|---|---|---|---|
 | 1 | push 就上線 | — | [x] | 2026-10-05 | `fb80377` |
-| 2 | 基本版面 | 1 | [ ] | | |
+| 2 | 基本版面 | 1 | [x] | 2026-10-05 | `5ce4506` |
 | 3 | 文章頁的閱讀體驗 | 2 | [ ] | | |
 | 4 | 被找到與被訂閱 | 3 | [ ] | | |
 | 5 | 分區與首頁列表 | 3 | [ ] | | |
@@ -129,6 +129,82 @@
    `markup.goldmark.renderHooks.link.useEmbedded = "always"`,之後 `[字](/projects/one/)`、
    `[字](/projects/one)`、`[字](projects/one.md)` 都會被解析成 `/BDGG_blog/projects/one/`。
 
+### 版面(功能 2,2026-10-05)
+
+**站主這一項決定的事**
+
+- **標語與說明換新的**,不沿用原架構的:標語「技術筆記、學習心得，與做過的專案」,
+  說明「BDGG 的技術筆記、課程與學習心得、專案紀錄與隨筆。」(`hugo.toml` 的 `[params]`)。
+- **分享圖重畫**:原圖印著舊網域與舊標語,不能搬。新圖同版面、同配色,字換成站名、標語與
+  `yongrui0402.github.io/BDGG_blog`。
+- **頁尾的「本機預覽版本」標記拿掉**,對應的樣式也沒搬。
+
+**版型現在的樣子,以及之後各項要補的地方**
+
+- 版型裡一律寫 `site.Title`、`site.Params.x`,不寫 `.Site.`。
+- **`baseof`**:沒有 `data-baseurl`(功能 8 要加時寫 `data-baseurl="{{ "" | relURL }}"`);
+  沒有複製程式碼的腳本(功能 3 加);`{{ block "scripts" . }}` 已經在,
+  功能 5、8 的版型直接 `{{ define "scripts" }}` 就會輸出。
+- **`head`**:目前只有標題、作者、兩份樣式、favicon、GA4。說明文字、canonical、
+  社群分享的 meta、feed 宣告、`article:published_time` 都留給功能 4。
+  分享圖固定寫 `{{ "og-default.png" | absURL }}`;原版型依封面與 front matter `image` 換圖的那一段不搬。
+- **`header`**:選單是空的時候不輸出 `<nav>`。目前選單只有「首頁」一項 ——
+  原架構沒有這一項(站名本身就是回首頁的連結),這裡先放著讓選單看得到。
+  功能 5 掛上分區時決定要不要留。
+- **`footer`**:只有站名與 GitHub 連結。「標籤」連結功能 6 加,「RSS」連結功能 4 加。
+- **`404`**:只有說明與回首頁。分區連結等功能 5、搜尋框等功能 8。
+  這一頁會出現在任意深度的網址上,連結一定要是從網域根算起的路徑
+  (`.RelPermalink`、`"x/" | relURL` 都是),不能寫相對路徑。
+- **`single`、`index`** 是配合新版面改的精簡版,功能 3、功能 5 會整份換掉。
+- **`hugo.toml` 作者欄**:原架構那段匿名規則的註解沒有搬進來,功能 7 不必再處理它。
+
+**`main.css`**
+
+- 整份讀過後進來了。刪掉的段落:封面、閱讀進度條、分享、留言、相關文章、圖片(`.fig`)、
+  喘息照、系列導覽、頁尾的預覽標記。之後各項搬版型時**不必再回來源拿樣式**。
+- 還沒有版型在用、但留著等之後功能的段落:分類圖示、文章列表、排序、首頁的卡片、文章頁、
+  目錄、標籤、分頁(功能 3、5、6);搜尋(功能 8);複製按鈕(功能 3);關於頁的技能標籤(功能 7)。
+  **哪一項做完發現自己那一段有用不到的樣式,就在那一項刪掉** —— 收尾的驗收會查「沒有用不到的樣式」。
+  關於頁的技能標籤(`.btn-inline`、`.btn-outline`)要在 Markdown 裡寫 HTML 才用得到
+  (需要 `markup.goldmark.renderer.unsafe = true`),功能 7 不用的話整段刪。
+- 文章列表(`.entry`、`.entry-tags`)已改成**沒有縮圖**的版本:拿掉縮圖的間距、標籤的左縮排、
+  窄螢幕時改成直排的那一段。用一個假頁面照原版型的結構(去掉封面)在 360px 與深色下看過,
+  功能 5 搬 `entry.html` 時再看一眼真的頁面。
+- **`body` 多了 `overflow-wrap: break-word`**,原樣式沒有。實測 360px 寬時,內文一個很長的網址會把
+  整頁撐出橫向捲軸(頁面寬度變成 1139px);加上之後長字串會從中間折行。
+  `pre` 與表格不受影響,仍然是自己橫向捲。
+- **表格在 360px 寬**會自己橫向捲,不會撐開頁面;但中文欄位會被擠到一行一個字,不好讀。
+  這是文章頁的事,功能 3 決定要不要處理(例如讓儲存格不換行)。
+- `syntax.css` 已經載入,但 `markup.highlight.noClasses = false` 還沒設(功能 3)。
+  沒設之前 Hugo 產出的程式碼區塊帶行內樣式,不會跟著深色模式切換。
+
+**實測到的行為**
+
+- **GitHub Pages 的 404**:`/BDGG_blog/` 底下任何不存在的網址(試過三種深度)都回 HTTP 404,
+  內容就是成品的 `404.html`。子路徑以外的網址(`yongrui0402.github.io/別的`)是 GitHub 的通用 404,
+  這個 repo 管不到。
+- **GA4**:ID 留空時成品裡沒有追蹤碼;填一個假 ID,正式建置會輸出、`-e development` 不輸出。
+  原版型的寫法 `{{ template "_internal/google_analytics.html" . }}` 在 0.165.0 沒有棄用警告,照搬。
+- **選單**:掛滿 9 個項目(原架構全部分區加上最新、搜尋、關於)時,360px 寬會折成兩行,不會橫向捲。
+  `pageRef` 的選單項目在自己那一頁會有 `class="active"`;404 頁上沒有任何一項是 active。
+- **favicon** 副檔名是 `.ico`,內容其實是 32×32 的 PNG(原架構就是這樣),瀏覽器照樣顯示。圖上沒有文字。
+
+**分享圖怎麼重畫**
+
+- `python3 scripts/make_og_image.py` 會讀 `hugo.toml` 的站名、標語與 `baseURL`,寫出 `static/og-default.png`。
+  **這三個值改了就要重跑,並把新的圖一起 commit** —— 建置時不會自動重畫。
+  需要 Pillow 與 Noto Sans CJK 字型;不在 `make check` 裡,CI 不依賴它。
+  同樣的輸入重跑,產出的檔案逐位元相同。
+- 圖現在還沒有任何頁面引用。功能 4 加上 `og:image` 時,成品檢查要擴充到 `<meta content>` 裡的網址。
+
+**怎麼驗「360px 沒有橫向捲動」與深淺色**
+
+- 用本機的無頭 Chrome(遠端除錯埠)開頁面,設定視窗寬度與 `prefers-color-scheme`,
+  比 `document.documentElement.scrollWidth` 與 `clientWidth`,順便記下所有回應碼 400 以上的請求。
+  量測用的腳本只放在當次對話的暫存區,沒有進 repo。
+- **先確認量得出問題**:這個方法在還沒加 `overflow-wrap` 時量到了 1139 / 360,所以它回報「沒有橫向捲動」是可信的。
+  之後要驗時,記得用一個內容夠刁鑽的頁面(長網址、長程式碼、寬表格、很長的標題),只量首頁量不出東西。
+
 ### 建置與成品檢查(功能 1)
 
 - **`make check`** = 刪掉 `public/` → `hugo --gc --minify --panicOnWarning` → 檢查器的對照組測試 → 成品檢查。
@@ -142,12 +218,13 @@
 - **成品檢查**(`scripts/check_public.py`)看的是每個 HTML 的 `href` 與 `src`、class 含 `draft-tag` 的元素、
   以及所有檔案裡的 `192.168.`。之後的功能要注意:
   - 網址若放在別的屬性(`srcset`、`data-baseurl`、`<meta content>` 裡的分享圖),檢查器看不到,要跟著擴充
-  - 功能 3 搬文章頁時,草稿標記沿用 `draft-tag` 這個 class;要改名就連檢查器與它的測試一起改
+  - 功能 3 搬文章頁時,草稿標記沿用 `draft-tag` 這個 class;要改名就連檢查器與它的測試一起改。
+    功能 2 之後這個標記在 `layouts/_default/single.html`(精簡版的文章頁),不在 `baseof` 了
   - 新增一種要擋的情況,就在 `scripts/test_check_public.py` 加一個假成品,確認真的會擋
   - `--minify` 會拿掉屬性的引號(`class=draft-tag`),所以不能用 `grep 'class="draft-tag"'` 這種寫法檢查成品
 - **還沒做到的頁面種類先關掉**(`hugo.toml` 的 `disableKinds`),輪到時再打開:
-  RSS、sitemap、`robots.txt` → 功能 4;`taxonomy`、`term` → 功能 6;`404` → 功能 2。
-- **`content/link-test.md` 與選單的「連結測試」是功能 1 的測試頁**,功能 2 有正式的版面與選單後拿掉。
+  RSS、sitemap、`robots.txt` → 功能 4;`taxonomy`、`term` → 功能 6。(`404` 已在功能 2 打開。)
+- 功能 1 的測試頁 `content/link-test.md` 與選單的「連結測試」已在功能 2 拿掉。
 - **workflow 只用 GitHub 官方的三個 action**(`checkout@v7`、`upload-pages-artifact@v5`、`deploy-pages@v5`),
   不覆蓋 `baseURL`(直接用 `hugo.toml` 的值)。
 - **日期出現之後**(功能 3),時區寫在 `hugo.toml` 的 `timeZone`,不要靠 CI 的環境變數,本機與 CI 的成品才會一樣。
