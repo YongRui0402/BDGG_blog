@@ -1,4 +1,15 @@
 {{ define "main" }}
-{{ .Content }}
-<p><a href="{{ site.Home.RelPermalink }}">回首頁</a></p>
+<article class="post">
+  <header class="post-head">
+    <h1>{{ .Title }}</h1>
+    {{- /* 草稿只會出現在 make preview；成品檢查靠 draft-tag 這個 class 擋草稿 */}}
+    {{- if .Draft }}
+    <p class="meta"><strong class="draft-tag">草稿</strong></p>
+    {{- end }}
+  </header>
+
+  <div class="content">
+    {{ .Content }}
+  </div>
+</article>
 {{ end }}

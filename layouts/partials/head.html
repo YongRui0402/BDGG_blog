@@ -1,0 +1,27 @@
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  {{- /* 404 頁的 .Title 是 Hugo 內建的英文字串，換成和頁面上一樣的中文 */}}
+  {{- $pageTitle := cond (eq .Kind "404") "找不到這個頁面" .Title }}
+  {{- $title := cond .IsHome site.Title (printf "%s · %s" $pageTitle site.Title) }}
+  <title>{{ $title }}</title>
+
+  <meta name="author" content="{{ site.Params.author }}">
+
+  {{- $css := resources.Get "css/main.css" | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+
+  {{- /* 語法高亮的樣式表由 Hugo 產生，跟著深色模式切換 */}}
+  {{- $syntax := resources.Get "css/syntax.css" }}
+  {{- with $syntax }}
+  <link rel="stylesheet" href="{{ (. | minify | fingerprint).RelPermalink }}">
+  {{- end }}
+
+  <link rel="icon" href="{{ "favicon.ico" | relURL }}" sizes="any">
+
+  {{- /* GA4 只在正式建置、而且 hugo.toml 填了 ID 時才載入：本機預覽不該算進統計 */}}
+  {{- if and hugo.IsProduction site.Config.Services.GoogleAnalytics.ID }}
+  {{ template "_internal/google_analytics.html" . }}
+  {{- end }}
+</head>

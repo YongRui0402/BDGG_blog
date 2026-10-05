@@ -1,6 +1,12 @@
 {{ define "main" }}
-{{ .Content }}
-{{ with site.GetPage "/link-test" }}
-<p><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>
-{{ end }}
+<section class="hero">
+  <h1>{{ site.Title }}</h1>
+  <p>{{ site.Params.tagline }}</p>
+</section>
+
+{{- with .Content }}
+<div class="content">
+  {{ . }}
+</div>
+{{- end }}
 {{ end }}

@@ -7,13 +7,23 @@ defaultContentLanguage = "zh-tw"
 # RSS、sitemap、robots.txt → 功能 4;標籤 → 功能 6;404 → 功能 2
 disableKinds = ["taxonomy", "term", "rss", "sitemap", "robotsTXT", "404"]
 
-# 選單一律用 pageRef 指向頁面,不寫 url —— 站台在子路徑底下
+[params]
+  # tagline 出現在每一頁的頁首與首頁;description 是給搜尋引擎與社群分享看的說明文字。
+  # 兩者都描述「這裡有什麼內容」。
+  tagline = "技術筆記、學習心得，與做過的專案"
+  description = "BDGG 的技術筆記、課程與學習心得、專案紀錄與隨筆。"
+  author = "BDGG"
+  # GitHub 帳號,頁尾的連結用
+  github = "YongRui0402"
+
+# GA4:ID 留空就不輸出追蹤碼。要啟用時填上 G- 開頭的評估 ID。
+[services]
+  [services.googleAnalytics]
+    ID = ""
+
+# 選單一律用 pageRef 指向頁面,不寫 url —— 站台在子路徑底下。
+# 項目跟著功能進來:頁面存在了才掛上選單。
 [[menus.main]]
   name = "首頁"
   pageRef = "/"
   weight = 10
-
-[[menus.main]]
-  name = "連結測試"
-  pageRef = "/link-test"
-  weight = 20

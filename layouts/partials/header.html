@@ -1,0 +1,16 @@
+<header class="site-head">
+  <div class="wrap head-inner">
+    <a class="brand" href="{{ site.Home.RelPermalink }}">
+      <span class="brand-name">{{ site.Title }}</span>
+      <span class="brand-sub">{{ site.Params.tagline }}</span>
+    </a>
+    {{- with site.Menus.main }}
+    <nav class="nav" aria-label="主選單">
+      {{- range . }}
+      {{- $active := or ($.IsMenuCurrent "main" .) ($.HasMenuCurrent "main" .) }}
+      <a href="{{ .URL }}"{{ if $active }} class="active" aria-current="page"{{ end }}>{{ .Name }}</a>
+      {{- end }}
+    </nav>
+    {{- end }}
+  </div>
+</header>

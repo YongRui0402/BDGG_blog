@@ -1,21 +1,14 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="{{ site.Language.Locale }}">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ if .IsHome }}{{ site.Title }}{{ else }}{{ .Title }} | {{ site.Title }}{{ end }}</title>
-</head>
+{{ partial "head.html" . }}
 <body>
-  <nav>
-    {{- range site.Menus.main }}
-    <a href="{{ .URL }}">{{ .Name }}</a>
-    {{- end }}
-  </nav>
-  <main>
-    {{- /* 草稿只會出現在 make preview;成品檢查靠這個 class 擋草稿 */ -}}
-    {{ if .Draft }}<p class="draft-tag">草稿</p>{{ end }}
-    <h1>{{ .Title }}</h1>
+  <a class="skip" href="#main">跳到主要內容</a>
+  {{ partial "header.html" . }}
+  <main id="main" class="wrap">
     {{ block "main" . }}{{ end }}
   </main>
+  {{ partial "footer.html" . }}
+
+  {{ block "scripts" . }}{{ end }}
 </body>
 </html>
