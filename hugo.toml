@@ -27,6 +27,7 @@ enableRobotsTXT = true
   # 改了 tagline 要重畫分享圖:python3 scripts/make_og_image.py
   tagline = "技術筆記、學習心得，與做過的專案"
   description = "BDGG 的技術筆記、課程與學習心得、專案紀錄與隨筆。"
+  # 筆名。每一頁的作者欄與 RSS 的作者都用它;這個人是誰、怎麼聯絡,寫在關於頁(content/about.md)。
   author = "BDGG"
   # GitHub 帳號,頁尾的連結用
   github = "YongRui0402"
@@ -82,6 +83,8 @@ enableRobotsTXT = true
 # 名稱不寫,取自該頁的 title(分類是 content/<分類>/_index.md)。
 # 六個分類都列在這裡,但還沒有文章的那幾個不會顯示(layouts/partials/menu.html),
 # 所以某個分類的第一篇文章發出去時,不必回來改這一段。
+# 「最新」與「關於」是 content/ 根目錄的單頁,不是分類,一律顯示 ——
+# 所以它們指向的頁面不能是草稿(選單會留下一個空的連結,make check 會擋)。
 [[menus.main]]
   name = "最新"
   pageRef = "/latest"
@@ -104,3 +107,6 @@ enableRobotsTXT = true
 [[menus.main]]
   pageRef = "/life"
   weight = 42
+[[menus.main]]
+  pageRef = "/about"
+  weight = 50

@@ -4,9 +4,10 @@ BDGG 的部落格,用 [Hugo](https://gohugo.io/) 產生,由 GitHub Actions 建�
 原稿、版型、建置設定都在這個 repo 裡。
 
 - 站台:<https://yongrui0402.github.io/BDGG_blog/>
+- 作者:BDGG(筆名)。介紹與聯絡方式在[關於頁](https://yongrui0402.github.io/BDGG_blog/about/)
 - 開發紀錄:[`docs/requirements.md`](docs/requirements.md)(為什麼這樣做)、[`docs/features.md`](docs/features.md)(一項一項怎麼做)
 
-站還在搭建中,功能照 `docs/features.md` 的順序一項一項加上來。目前可以發文、閱讀、依分區或標籤瀏覽,也可以用 RSS 訂閱(<https://yongrui0402.github.io/BDGG_blog/index.xml>);關於頁、搜尋還沒做。
+站還在搭建中,功能照 `docs/features.md` 的順序一項一項加上來。目前可以發文、閱讀、依分區或標籤瀏覽,也可以用 RSS 訂閱(<https://yongrui0402.github.io/BDGG_blog/index.xml>);站內搜尋還沒做。
 
 ## 在本機跑
 
@@ -61,6 +62,8 @@ push 之後一分鐘內(第一篇實測 24 秒),文章會出現在 `https://yong
 - **程式碼區塊**記得標語言(` ```bash `、` ```ts `),才會上色。
 - **內文不要直接寫 HTML 標籤**(例如 `<b>字</b>`):Hugo 會略過它並給一個警告,`make check` 把警告當成失敗。
   要在文章裡提到某個標籤,寫成行內程式碼。
+- **關於頁**是 [`content/about.md`](content/about.md),放在 `content/` 根目錄、不屬於任何分區,所以不會出現在首頁、
+  「最新」頁與 RSS 裡。改它和改文章一樣:編輯、`make check`、push。它掛在選單上,不要把它設成草稿。
 - front matter 各欄位的用途寫在範本 [`archetypes/default.md`](archetypes/default.md) 的註解裡。
 
 ## 授權
