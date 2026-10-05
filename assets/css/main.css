@@ -367,11 +367,15 @@ h1 .sect-icon { width: .82em; height: .82em; color: var(--fg-muted); }
   vertical-align: top;
 }
 .content th { background: var(--bg-soft); font-weight: 600; }
+/* 欄位至少和表頭一樣寬、而且放得下幾個中文字。不設的話窄螢幕會把每一欄
+   擠到一行一兩個字；設了之後放不下的表格改成自己橫向捲。 */
+.content th { white-space: nowrap; }
+.content th, .content td { min-width: 5em; }
 
 .content hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
 
-.tags { margin: 2rem 0 0; font-size: .85rem; display: flex; flex-wrap: wrap; gap: .5rem; }
-.tags a { color: var(--fg-muted); text-decoration: none; }
+.tags { margin: 2rem 0 0; font-size: .85rem; display: flex; flex-wrap: wrap; gap: .5rem; color: var(--fg-muted); }
+.tags a { color: inherit; text-decoration: none; }
 .tags a:hover { color: var(--accent); }
 
 .pager {

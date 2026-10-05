@@ -9,4 +9,24 @@
   {{ . }}
 </div>
 {{- end }}
+
+{{- /* 暫時的文章清單：讓讀者從首頁點得到文章。正式的首頁列表之後整份換掉。
+       只列分區底下的文章，content/ 根目錄的單頁不算。 */}}
+{{- with (where site.RegularPages "Section" "ne" "").ByDate.Reverse }}
+<section class="recent">
+  <h2>文章</h2>
+  <ul class="entries">
+    {{- range . }}
+    <li>
+      <a class="entry" href="{{ .RelPermalink }}">
+        <span class="entry-body">
+          <span class="entry-meta"><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time></span>
+          <span class="entry-title">{{ .Title }}</span>
+        </span>
+      </a>
+    </li>
+    {{- end }}
+  </ul>
+</section>
+{{- end }}
 {{ end }}

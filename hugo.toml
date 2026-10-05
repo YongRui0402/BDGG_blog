@@ -2,10 +2,14 @@ baseURL = "https://yongrui0402.github.io/BDGG_blog/"
 title = "BDGG"
 locale = "zh-Hant-TW"
 defaultContentLanguage = "zh-tw"
+# 中文沒有空白分詞,不開的話閱讀時間與字數會把一整段算成一個字
+hasCJKLanguage = true
+# 文章日期沒寫時區時用這個,本機與 CI 才會建出一樣的成品
+timeZone = "Asia/Taipei"
 
 # 還沒做到的頁面種類先關掉,輪到那一項功能時再打開:
-# RSS、sitemap、robots.txt → 功能 4;標籤 → 功能 6
-disableKinds = ["taxonomy", "term", "rss", "sitemap", "robotsTXT"]
+# 分區列表頁 → 功能 5;RSS、sitemap、robots.txt → 功能 4;標籤 → 功能 6
+disableKinds = ["section", "taxonomy", "term", "rss", "sitemap", "robotsTXT"]
 
 [params]
   # tagline 出現在每一頁的頁首與首頁;description 是給搜尋引擎與社群分享看的說明文字。
@@ -16,11 +20,43 @@ disableKinds = ["taxonomy", "term", "rss", "sitemap", "robotsTXT"]
   author = "BDGG"
   # GitHub 帳號,頁尾的連結用
   github = "YongRui0402"
+  # 文章超過這個月數沒更新,文首會自動掛上「內容可能已過期」的提示
+  staleAfterMonths = 12
 
 # GA4:ID 留空就不輸出追蹤碼。要啟用時填上 G- 開頭的評估 ID。
 [services]
   [services.googleAnalytics]
     ID = ""
+
+# 文章網址是 /<分區>/<slug>/。front matter 沒寫 slug 時用檔名,
+# 不會退而用標題(:slug 會,中文標題就變成中文網址)。
+[permalinks]
+  [permalinks.page]
+    pitfalls  = "/pitfalls/:slugorcontentbasename/"
+    decisions = "/decisions/:slugorcontentbasename/"
+    projects  = "/projects/:slugorcontentbasename/"
+    notes     = "/notes/:slugorcontentbasename/"
+    learning  = "/learning/:slugorcontentbasename/"
+    life      = "/life/:slugorcontentbasename/"
+
+[markup]
+  [markup.goldmark]
+    # 站台在子路徑底下,內文裡的站內連結與圖片要由 Hugo 解析成完整路徑:
+    # [字](/learning/某篇/) 與 [字](某篇.md) 都會變成 /BDGG_blog/learning/某篇/。
+    # 預設(auto)只在多語系站台才解析,所以這裡寫 always。
+    [markup.goldmark.renderHooks]
+      [markup.goldmark.renderHooks.link]
+        useEmbedded = "always"
+      [markup.goldmark.renderHooks.image]
+        useEmbedded = "always"
+  [markup.highlight]
+    # 產出 class 而不是行內樣式,顏色由 assets/css/syntax.css 決定,才能跟著深色模式切換
+    noClasses = false
+    lineNos = false
+    tabWidth = 4
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
 
 # 選單一律用 pageRef 指向頁面,不寫 url —— 站台在子路徑底下。
 # 項目跟著功能進來:頁面存在了才掛上選單。

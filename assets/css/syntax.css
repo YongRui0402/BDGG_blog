@@ -1,9 +1,14 @@
-/* 語法高亮。由 hugo gen chromastyles 產生，不要手改。
+/* 語法高亮。兩段都由 hugo gen chromastyles 產生，不要手改。
    重新產生：
      hugo gen chromastyles --style=github        > /tmp/l.css
      hugo gen chromastyles --style=github-dark   > /tmp/d.css
-   然後把 dark 那份包進 prefers-color-scheme 媒體查詢。 */
+   然後把兩份各自包進對應的 prefers-color-scheme 媒體查詢。
 
+   淺色那份也要包：兩份定義的 class 不完全相同（github-dark 沒有標點 .p、
+   .na、.nb、.bp），淺色那份不包的話，這幾種在深色模式會留著淺色版的深色字，
+   在深色底上看不見。 */
+
+@media (prefers-color-scheme: light) {
 /* Generated using: hugo gen chromastyles --style=github */
 
 /* Background */ .bg { background-color:#f7f7f7; }
@@ -79,6 +84,7 @@
 /* GenericOutput */ .chroma .go { color:#1f2328 }
 /* GenericUnderline */ .chroma .gl { text-decoration:underline }
 /* TextWhitespace */ .chroma .w { color:#fff }
+}
 
 @media (prefers-color-scheme: dark) {
   /* Generated using: hugo gen chromastyles --style=github-dark */

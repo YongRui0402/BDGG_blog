@@ -1,15 +1,88 @@
 {{ define "main" }}
+{{- /* 文章才有的東西（分區、日期、過期提示、上下篇）都以 .Section 判斷 ——
+       放在 content/ 根目錄的單頁沒有分區，Section 是空字串。 */}}
+{{- $updated := gt (.Lastmod.Sub .Date).Hours 24.0 }}
 <article class="post">
   <header class="post-head">
+    {{- /* 分區先顯示成文字：分區列表頁還沒有，不放點了會 404 的連結 */}}
+    {{- with partial "sect-name.html" . }}
+    <span class="sect">{{ partial "sect-icon.html" $.Section }}{{ . }}</span>
+    {{- end }}
+
     <h1>{{ .Title }}</h1>
+
     {{- /* 草稿只會出現在 make preview；成品檢查靠 draft-tag 這個 class 擋草稿 */}}
-    {{- if .Draft }}
-    <p class="meta"><strong class="draft-tag">草稿</strong></p>
+    {{- if or .Section .Draft }}
+    <p class="meta">
+      {{- if .Section }}
+      <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time>
+      {{- if $updated }}
+      · 更新於 {{ .Lastmod.Format "2006-01-02" }}
+      {{- end }}
+      · {{ .ReadingTime }} 分鐘
+      {{- end }}
+      {{- if .Draft }}{{ if .Section }} · {{ end }}<strong class="draft-tag">草稿</strong>{{ end }}
+    </p>
+    {{- end }}
+
+    {{- /* 技術文章最怕讀者不知道內容已經過期。超過設定月數就自動掛提示，
+           不必每篇手動維護。 */}}
+    {{- if .Section }}
+    {{- $stale := default 12 site.Params.staleAfterMonths }}
+    {{- $ref := cond $updated .Lastmod .Date }}
+    {{- $months := div (now.Sub $ref).Hours 730.0 }}
+    {{- if gt $months $stale }}
+    <p class="stale">
+      本文寫於 {{ $ref.Format "2006-01" }}，距今約 {{ math.Floor $months }} 個月。
+      技術環境變動快，套用前請自行驗證。
+    </p>
+    {{- end }}
     {{- end }}
   </header>
+
+  {{- /* 技術讀者想先知道結論，再決定要不要往下讀 */}}
+  {{- with .Params.key_points }}
+  <aside class="tldr">
+    <p class="tldr-t">重點</p>
+    <ul>
+      {{- range . }}<li>{{ . | markdownify }}</li>{{ end }}
+    </ul>
+  </aside>
+  {{- end }}
+
+  {{- /* 內文沒有 h2、h3 時不輸出，免得留一個空的框 */}}
+  {{- if and .Params.toc .Fragments.Headings }}
+  <nav class="toc" aria-label="目錄">
+    <p class="toc-t">目錄</p>
+    {{ .TableOfContents }}
+  </nav>
+  {{- end }}
 
   <div class="content">
     {{ .Content }}
   </div>
+
+  {{- with .Params.takeaway }}
+  <aside class="takeaway">
+    <p class="takeaway-t">一句話帶走</p>
+    <p>{{ . | markdownify }}</p>
+  </aside>
+  {{- end }}
+
+  {{- /* 標籤先顯示成文字，標籤頁做好之後再變成連結 */}}
+  {{- with .Params.tags }}
+  <p class="tags">
+    {{- range . }}
+    <span>#{{ . }}</span>
+    {{- end }}
+  </p>
+  {{- end }}
+
+  {{- if and .Section (or .PrevInSection .NextInSection) }}
+  <nav class="pager" aria-label="同分區的上一篇與下一篇">
+    {{- with .PrevInSection }}<a class="prev" href="{{ .RelPermalink }}">← {{ .Title }}</a>{{ end }}
+    {{- with .NextInSection }}<a class="next" href="{{ .RelPermalink }}">{{ .Title }} →</a>{{ end }}
+  </nav>
+  {{- end }}
 </article>
 {{ end }}

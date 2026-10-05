@@ -1,0 +1,4 @@
+{{- /* 分類的中文名。取 section 首頁（content/<分區>/_index.md）的 title，不另外維護對照表。
+       content/ 根目錄的單頁沒有分區（Section 是空字串），什麼都不輸出 ——
+       不擋的話 GetPage "/" 會拿到首頁，把站名當成分區名。 */ -}}
+{{- if .Section }}{{ with site.GetPage (printf "/%s" .Section) }}{{ .Title }}{{ end }}{{ end -}}
