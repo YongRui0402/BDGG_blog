@@ -482,16 +482,3 @@ mark {
 @media (hover: none) {
   .copy-btn { opacity: .7; }
 }
-
-/* 技能標籤（關於頁） */
-.btn-inline { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0 1.25rem; }
-.btn-outline {
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--bg-soft);
-  color: var(--fg);
-  padding: .18rem .55rem;
-  font: inherit;
-  font-size: .84rem;
-  cursor: default;
-}
