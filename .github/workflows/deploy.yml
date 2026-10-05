@@ -1,0 +1,45 @@
+# push 到 main → 建置 → 成品檢查 → 部署到 GitHub Pages。
+#
+# 建置與檢查就是本機的 make check,兩邊跑同一道指令、用同一版 Hugo(.hugo-version)。
+# make check 沒過,deploy 就不會跑,線上的站停在上一版。
+
+name: 建置並部署
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同時只跑一個部署;正在部署的那一個讓它跑完,不中途取消
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 建置與成品檢查
+        run: make check
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
