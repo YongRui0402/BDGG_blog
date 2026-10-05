@@ -7,6 +7,9 @@
    子路徑從 hugo.toml 的 baseURL 取,例如 /BDGG_blog/。
    寫成 href="/tags/" 的連結建置時不會報錯,放上子路徑才會壞,所以要在這裡擋。
    寫了主機的站內連結(例如 canonical)還要和 baseURL 同一種協定,不能是 http://。
+   搜尋用的兩種網址也算站內連結:搜尋框交給腳本的索引檔位置(data-index),
+   以及搜尋索引 index.json 裡每一篇文章的網址 —— 那些是瀏覽器裡的腳本在讀,HTML 裡看不到。
+   索引裡的網址要從網域根寫起(404 頁會出現在任意深度的網址上),索引本身要是解析得了的 JSON。
 2. 給站外讀的網址是站台底下的完整網址,而且成品裡有它:
    - 社群分享用的 <meta property="og:url"> 與 <meta property="og:image">
    - RSS feed 裡的每一個網址:頻道與每一篇的連結、feed 自己的網址(要等於它實際的位置)、
@@ -20,7 +23,7 @@
    feed 與 sitemap 本身也要是解析得了的 XML。
    (sitemap 與 feed 的 xmlns 是 http:// 開頭的命名空間名稱,不是連結,所以檢查的是上面列的那些值,
    不是在整個檔案裡找 http:// 這個字串。)
-3. 成品裡沒有草稿標記(class 含 draft-tag 的元素)。
+3. 成品裡沒有草稿標記(class 含 draft-tag 的元素),搜尋索引裡也沒有草稿。
    正式建置本來就不會產出草稿;這是 --buildDrafts 被誤加時的保險。
 4. 成品的任何檔案都不含 192.168. 這個字串。
 
@@ -31,6 +34,7 @@
 """
 
 import argparse
+import json
 import re
 import sys
 import tomllib
@@ -40,6 +44,10 @@ from pathlib import Path
 from urllib.parse import unquote, urljoin, urlsplit
 
 DRAFT_CLASS = "draft-tag"
+# 值是站內網址的屬性。data-index 是搜尋框交給腳本的索引檔位置(layouts/partials/search-form.html)
+URL_ATTRS = {"href", "src", "data-index"}
+# 搜尋索引:首頁的 JSON 輸出(layouts/index.json)
+SEARCH_INDEX = "index.json"
 PRIVATE_IP = b"192.168."
 # 不是「連到某個頁面」的網址,不檢查
 SKIP_SCHEMES = {"mailto", "tel", "data", "javascript"}
@@ -76,7 +84,7 @@ class PageScan(HTMLParser):
         for name, value in attrs:
             # --minify 會把 href="" 縮成沒有值的 href,解析出來是 None,要當成空字串一起擋
             value = value or ""
-            if name in ("href", "src"):
+            if name in URL_ATTRS:
                 self.urls.append(value.strip())
             elif name == "class" and DRAFT_CLASS in value.split():
                 self.has_draft = True
@@ -115,7 +123,7 @@ def check_links(public, html_file, urls, base, base_path):
     for url in urls:
         if not url:
             # 選單的 pageRef 指向不存在的頁面時,Hugo 不報錯,只給空字串
-            problems.append(f"{rel_file}: 有一個空的 href 或 src")
+            problems.append(f"{rel_file}: 有一個空的 href、src 或 data-index")
             continue
         if url.startswith("#"):
             continue
@@ -190,6 +198,33 @@ def check_feed(public, rel, root, base, base_path):
     return count, problems
 
 
+def check_search_index(public, rel, data, base_path):
+    """搜尋索引是瀏覽器裡的腳本在讀的:每一篇的網址要打得開,而且不能有草稿。回傳 (網址數, 問題清單)。"""
+    try:
+        entries = json.loads(data)
+    except ValueError as error:
+        return 0, [f"{rel}: 不是合法的 JSON({error})"]
+    if not isinstance(entries, list) or not all(isinstance(e, dict) for e in entries):
+        return 0, [f"{rel}: 應該是一個陣列,每一筆是一篇文章"]
+
+    problems = []
+    for number, entry in enumerate(entries, 1):
+        what = f"{rel}: 第 {number} 筆({entry.get('t')!r})"
+        if entry.get("dr"):
+            problems.append(f"{what}是草稿")
+        url = entry.get("u")
+        if not isinstance(url, str) or not url:
+            problems.append(f"{what}沒有網址")
+            continue
+        # 搜尋結果會出現在 404 頁,那一頁的網址可以是任意深度,所以一定要從網域根寫起
+        path = unquote(urlsplit(url).path)
+        if urlsplit(url).netloc or not path.startswith(base_path):
+            problems.append(f"{what}的網址 {url!r} 落在 {base_path} 之外")
+        elif not target_exists(public, path.removeprefix(base_path)):
+            problems.append(f"{what}的網址 {url!r} 指向不存在的檔案")
+    return len(entries), problems
+
+
 def check(public, base_url):
     """回傳 (統計, 問題清單)。"""
     public = Path(public)
@@ -227,6 +262,12 @@ def check(public, base_url):
                     problem = site_url_problem(public, url, base, base_path)
                     if problem:
                         problems.append(f"{rel}: <loc> {problem}")
+            continue
+
+        if rel == SEARCH_INDEX:
+            count, found = check_search_index(public, rel, data, base_path)
+            stats["links"] += count
+            problems.extend(found)
             continue
 
         if rel == "robots.txt":

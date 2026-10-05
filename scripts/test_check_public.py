@@ -310,8 +310,64 @@ class CheckPublicTest(unittest.TestCase):
         self.assert_blocked("about/index.html:1", "192.168.")
 
     def test_private_ip_in_non_html_file_is_blocked(self):
-        self.write("index.json", f'[\n{{"content": "ssh {PRIVATE_IP}"}}\n]')
+        self.write("index.json", f'[\n{{"u":"/blog/about/","b":"ssh {PRIVATE_IP}"}}\n]')
         self.assert_blocked("index.json:2", "192.168.")
+
+    # 搜尋。假成品照 --minify 之後的樣子寫:屬性沒有引號,JSON 沒有空白
+
+    def test_search_form_and_index_with_site_paths_pass(self):
+        self.write("search/index.html", "<form class=search-form data-index=/blog/index.json></form>")
+        self.write("index.json", '[{"dt":"2026-10-05","t":"關於","u":"/blog/about/"}]')
+        stats, problems = check(self.public, BASE_URL)
+        self.assertEqual(problems, [])
+        # 原本的 2 個連結,加上 data-index 與索引裡的 1 篇
+        self.assertEqual(stats["links"], 4)
+
+    def test_search_form_index_outside_subpath_is_blocked(self):
+        # 腳本自己用 "/" 組網址、或版型寫成 "/index.json" | relURL 時的產出
+        self.write("index.json", "[]")
+        self.write("search/index.html", "<form data-index=/index.json></form>")
+        self.assert_blocked("search/index.html", "'/index.json'", "之外")
+
+    def test_search_form_pointing_at_missing_index_is_blocked(self):
+        # 搜尋框還在,但 hugo.toml 的 [outputs] 已經不出 json
+        self.write("search/index.html", "<form data-index=/blog/index.json></form>")
+        self.assert_blocked("search/index.html", "不存在")
+
+    def test_search_form_with_empty_index_is_blocked(self):
+        self.write("search/index.html", "<form data-index></form>")
+        self.assert_blocked("search/index.html", "空的")
+
+    def test_search_index_url_outside_subpath_is_blocked(self):
+        self.write("index.json", '[{"t":"關於","u":"/about/"}]')
+        self.assert_blocked("index.json", "第 1 筆", "'/about/'", "之外")
+
+    def test_search_index_relative_url_is_blocked(self):
+        # 在搜尋頁上會被解析成 /blog/search/about/,在 404 頁上更是隨網址而變
+        self.write("index.json", '[{"t":"關於","u":"about/"}]')
+        self.assert_blocked("index.json", "之外")
+
+    def test_search_index_url_to_missing_page_is_blocked(self):
+        self.write("index.json", '[{"t":"關於","u":"/blog/about/"},{"t":"不見了","u":"/blog/nope/"}]')
+        self.assert_blocked("index.json", "第 2 筆", "不存在")
+
+    def test_search_index_entry_without_url_is_blocked(self):
+        self.write("index.json", '[{"t":"關於"}]')
+        self.assert_blocked("index.json", "沒有網址")
+
+    def test_search_index_with_draft_is_blocked(self):
+        # 搜尋結果是腳本畫出來的,HTML 裡不會有 draft-tag,只能從索引擋
+        self.write("index.json", '[{"dr":true,"t":"草稿","u":"/blog/about/"}]')
+        self.assert_blocked("index.json", "第 1 筆", "草稿")
+
+    def test_search_index_with_percent_encoded_url_passes(self):
+        self.write("learning/中文/index.html", "<p>內文</p>")
+        self.write("index.json", '[{"t":"中文","u":"/blog/learning/%E4%B8%AD%E6%96%87/"}]')
+        self.assertEqual(self.problems(), [])
+
+    def test_broken_search_index_is_blocked(self):
+        self.write("index.json", '[{"t":"關於","u":"/blog/about/"')
+        self.assert_blocked("index.json", "不是合法的 JSON")
 
     def test_empty_output_is_blocked(self):
         (self.public / "index.html").unlink()

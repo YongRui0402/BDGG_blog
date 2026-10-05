@@ -1,0 +1,34 @@
+{{- /*
+  搜尋索引，給 assets/js/search.js 讀。它是首頁的 JSON 輸出（hugo.toml 的 [outputs]），網址是 /index.json。
+
+  收的文章和首頁、「最新」頁、RSS 是同一批：分類底下的文章。
+  content/ 根目錄的單頁（最新、搜尋、關於）不收。草稿在正式建置時本來就不在裡面。
+
+  用 jsonify 產生，不手動拼字串 —— 標題或內文裡的引號、換行、反斜線都會被正確跳脫。
+
+  欄位用縮寫，每一篇都會重複這些 key：
+    t 標題 / u 網址 / s 分類 / sn 分類的名稱 / g 標籤 / d 說明 / dt 日期 / b 內文
+    dr 草稿（只有 make preview 的索引裡會有，成品檢查會擋）
+
+  內文是讀者在頁面上看到的字（.Plain），不是 Markdown 原稿：原稿裡的 **、反引號與連結語法
+  會把一句話切斷，照頁面上的字搜反而找不到。.Plain 留著 &amp;、&#34; 這類 HTML 實體，
+  所以要還原成字元。截斷用 substr，不用 truncate —— 它會順手做一次 HTML 跳脫。
+*/ -}}
+{{- $index := slice -}}
+{{- range (where site.RegularPages "Section" "ne" "").ByDate.Reverse -}}
+  {{- $tags := slice -}}
+  {{- range .GetTerms "tags" }}{{ $tags = $tags | append .Title }}{{ end -}}
+  {{- $entry := dict
+      "t"  .Title
+      "u"  .RelPermalink
+      "s"  .Section
+      "sn" (partial "sect-name.html" . | string)
+      "g"  $tags
+      "d"  (partial "description.html" .)
+      "dt" (.Date.Format "2006-01-02")
+      "b"  (substr (.Plain | htmlUnescape) 0 24000)
+  -}}
+  {{- if .Draft }}{{ $entry = merge $entry (dict "dr" true) }}{{ end -}}
+  {{- $index = $index | append $entry -}}
+{{- end -}}
+{{- $index | jsonify -}}

@@ -1,0 +1,14 @@
+{{- /* 搜尋框。搜尋頁與 404 頁共用；用它的頁面還要自己放 #search-status、#results，並載入 js/search.js。
+       用法：{{ partial "search-form.html" (dict "placeholder" "關鍵字…") }}
+       多給 "guess" true 的話，網址沒有 ?q= 時，腳本會拿網址的最後一段當關鍵字（404 頁用）。
+
+       索引檔的網址在這裡交給腳本（data-index），腳本不自己組：站台在子路徑底下，
+       而且 404 頁會出現在任意深度的網址上。成品檢查會確認它指向存在的檔案。 */ -}}
+{{- $index := "" -}}
+{{- with site.Home.OutputFormats.Get "json" }}{{ $index = .RelPermalink }}{{ end -}}
+{{- if not $index }}{{ errorf "搜尋框找不到搜尋索引：hugo.toml 的 [outputs] 裡 home 要包含 \"json\"" }}{{ end -}}
+<form class="search-form" role="search" onsubmit="return false;" data-index="{{ $index }}"{{ if .guess }} data-guess{{ end }}>
+  <label class="sr-only" for="q">搜尋文章</label>
+  <input type="search" id="q" name="q" autocomplete="off" autocapitalize="off"
+         spellcheck="false" placeholder="{{ .placeholder }}">
+</form>

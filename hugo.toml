@@ -15,8 +15,9 @@ enableRobotsTXT = true
 # 只有首頁出 RSS(/index.xml,全站最新的文章)。分區頁與標籤頁明寫成只出 HTML:
 # 不寫的話 Hugo 預設每個分區、每個標籤各出一份 feed,而 layouts/_default/rss.xml
 # 收的是全站文章,每一份的內容都會一模一樣。
+# 首頁的 json 是搜尋索引(/index.json,版型在 layouts/index.json),搜尋頁與 404 頁的搜尋框讀它。
 [outputs]
-  home = ["html", "rss"]
+  home = ["html", "rss", "json"]
   section = ["html"]
   taxonomy = ["html"]
   term = ["html"]
@@ -83,7 +84,7 @@ enableRobotsTXT = true
 # 名稱不寫,取自該頁的 title(分類是 content/<分類>/_index.md)。
 # 六個分類都列在這裡,但還沒有文章的那幾個不會顯示(layouts/partials/menu.html),
 # 所以某個分類的第一篇文章發出去時,不必回來改這一段。
-# 「最新」與「關於」是 content/ 根目錄的單頁,不是分類,一律顯示 ——
+# 「最新」「搜尋」與「關於」是 content/ 根目錄的單頁,不是分類,一律顯示 ——
 # 所以它們指向的頁面不能是草稿(選單會留下一個空的連結,make check 會擋)。
 [[menus.main]]
   name = "最新"
@@ -107,6 +108,9 @@ enableRobotsTXT = true
 [[menus.main]]
   pageRef = "/life"
   weight = 42
+[[menus.main]]
+  pageRef = "/search"
+  weight = 45
 [[menus.main]]
   pageRef = "/about"
   weight = 50

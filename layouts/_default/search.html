@@ -1,0 +1,40 @@
+{{ define "main" }}
+<header class="list-head">
+  <h1>{{ .Title }}</h1>
+</header>
+
+{{ partial "search-form.html" (dict "placeholder" "關鍵字…（標題、標籤與內文都會搜）") }}
+
+{{- /* 分類快選：點一下只看那個分類，可以複選。清單跟著選單走，還沒有文章的分類不出現。
+       search.js 也從這裡複製分類的圖示，不另外抄一份 SVG。 */}}
+{{- with partial "sections.html" . }}
+<div class="chips" id="sect-chips" role="group" aria-label="依分類篩選">
+  {{- range . }}
+  <button class="chip" type="button" data-sect="{{ .Section }}"
+          data-name="{{ .Title }}" aria-pressed="false">
+    {{- partial "sect-icon.html" .Section }}{{ .Title }}
+    <span class="chip-n">{{ len .RegularPages }}</span>
+  </button>
+  {{- end }}
+</div>
+{{- end }}
+
+{{- with site.GetPage "/tags" }}
+<p class="muted searchhint">
+  想從標籤找？看 <a href="{{ .RelPermalink }}">全部標籤</a>。
+</p>
+{{- end }}
+
+<p id="search-status" class="muted" aria-live="polite"></p>
+<ul id="results" class="entries"></ul>
+
+<noscript>
+  <p class="muted">搜尋需要 JavaScript。
+    {{- with site.GetPage "/latest" }}全部的文章列在<a href="{{ .RelPermalink }}">{{ .Title }}</a>。{{ end }}</p>
+</noscript>
+{{ end }}
+
+{{ define "scripts" }}
+{{- $js := resources.Get "js/search.js" | minify | fingerprint }}
+<script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+{{ end }}
