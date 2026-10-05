@@ -1,0 +1,19 @@
+baseURL = "https://yongrui0402.github.io/BDGG_blog/"
+title = "BDGG"
+locale = "zh-Hant-TW"
+defaultContentLanguage = "zh-tw"
+
+# 還沒做到的頁面種類先關掉,輪到那一項功能時再打開:
+# RSS、sitemap、robots.txt → 功能 4;標籤 → 功能 6;404 → 功能 2
+disableKinds = ["taxonomy", "term", "rss", "sitemap", "robotsTXT", "404"]
+
+# 選單一律用 pageRef 指向頁面,不寫 url —— 站台在子路徑底下
+[[menus.main]]
+  name = "首頁"
+  pageRef = "/"
+  weight = 10
+
+[[menus.main]]
+  name = "連結測試"
+  pageRef = "/link-test"
+  weight = 20

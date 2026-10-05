@@ -8,6 +8,18 @@ BDGG 的部落格,用 [Hugo](https://gohugo.io/) 產生,由 GitHub Actions 建�
 
 站還在搭建中,功能照 `docs/features.md` 的順序一項一項加上來。
 
+## 在本機跑
+
+需要 Linux、`make`、`curl`、`python3`(3.11 以上)。Hugo 不用自己裝 ——
+第一次執行時會依 [`.hugo-version`](.hugo-version) 下載同一版到 `.hugo-bin/`。
+
+```
+make preview   # 本機預覽(含草稿),網址會印在終端機上
+make check     # 建置 + 成品檢查
+```
+
+push 到 `main` 之後,GitHub Actions 跑同一道 `make check`,通過才部署;沒過的話線上的站停在上一版。
+
 ## 授權
 
 - 程式碼(版型、樣式、腳本、設定、workflow):[MIT](LICENSE)
