@@ -5,13 +5,28 @@
 
 <div class="content">
   <p>網址可能打錯了，或者這篇文章被改過網址。</p>
+</div>
+
+{{- /* 直接把搜尋放在 404 上，而不是叫讀者「回首頁再找」——
+       他們手上有的資訊就是那個壞掉的網址，那正好可以當關鍵字（guess）。 */}}
+{{ partial "search-form.html" (dict "placeholder" "用關鍵字找找看…" "guess" true) }}
+
+<p id="search-status" class="muted" aria-live="polite"></p>
+<ul id="results" class="entries"></ul>
+
+<div class="content">
   {{- /* 這一頁會出現在任意深度的網址上，連結一定要是從網域根算起的路徑。
-         選單裡的項目（有文章的分類、最新）都是。 */}}
-  <p>
-    <a href="{{ site.Home.RelPermalink }}">回首頁</a>
+         選單裡的項目（有文章的分類、最新、搜尋、關於）都是。 */}}
+  <p>或直接瀏覽：
+    <a href="{{ site.Home.RelPermalink }}">首頁</a>
     {{- range partial "menu.html" . }} ·
     <a href="{{ .URL }}">{{ .Name }}</a>
     {{- end }}
   </p>
 </div>
+{{ end }}
+
+{{ define "scripts" }}
+{{- $js := resources.Get "js/search.js" | minify | fingerprint }}
+<script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 {{ end }}
