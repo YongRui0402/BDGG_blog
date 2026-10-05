@@ -78,6 +78,10 @@ enableRobotsTXT = true
 # 六個分類都列在這裡,但還沒有文章的那幾個不會顯示(layouts/partials/menu.html),
 # 所以某個分類的第一篇文章發出去時,不必回來改這一段。
 [[menus.main]]
+  name = "最新"
+  pageRef = "/latest"
+  weight = 5
+[[menus.main]]
   pageRef = "/pitfalls"
   weight = 10
 [[menus.main]]
