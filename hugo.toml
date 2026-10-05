@@ -7,9 +7,8 @@ hasCJKLanguage = true
 # 文章日期沒寫時區時用這個,本機與 CI 才會建出一樣的成品
 timeZone = "Asia/Taipei"
 
-# 還沒做到的頁面種類先關掉,輪到那一項功能時再打開:
-# 分區列表頁 → 功能 5;標籤 → 功能 6
-disableKinds = ["section", "taxonomy", "term"]
+# 還沒做到的頁面種類先關掉,輪到那一項功能時再打開:標籤 → 功能 6
+disableKinds = ["taxonomy", "term"]
 # 版型在 layouts/robots.txt。sitemap 用 Hugo 內建的版型,輸出在 /sitemap.xml
 enableRobotsTXT = true
 
@@ -33,6 +32,10 @@ enableRobotsTXT = true
   github = "YongRui0402"
   # 文章超過這個月數沒更新,文首會自動掛上「內容可能已過期」的提示
   staleAfterMonths = 12
+
+# 分類頁一頁列 10 篇。超過一頁時排序按鈕不會出現(它只能重排當頁的項目)。
+[pagination]
+  pagerSize = 10
 
 # GA4:ID 留空就不輸出追蹤碼。要啟用時填上 G- 開頭的評估 ID。
 [services]
@@ -71,7 +74,24 @@ enableRobotsTXT = true
 
 # 選單一律用 pageRef 指向頁面,不寫 url —— 站台在子路徑底下。
 # 項目跟著功能進來:頁面存在了才掛上選單。
+# 名稱不寫,取自該頁的 title(分類是 content/<分類>/_index.md)。
+# 六個分類都列在這裡,但還沒有文章的那幾個不會顯示(layouts/partials/menu.html),
+# 所以某個分類的第一篇文章發出去時,不必回來改這一段。
 [[menus.main]]
-  name = "首頁"
-  pageRef = "/"
+  pageRef = "/pitfalls"
   weight = 10
+[[menus.main]]
+  pageRef = "/decisions"
+  weight = 20
+[[menus.main]]
+  pageRef = "/projects"
+  weight = 30
+[[menus.main]]
+  pageRef = "/notes"
+  weight = 40
+[[menus.main]]
+  pageRef = "/learning"
+  weight = 41
+[[menus.main]]
+  pageRef = "/life"
+  weight = 42

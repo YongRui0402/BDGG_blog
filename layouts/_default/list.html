@@ -1,0 +1,24 @@
+{{ define "main" }}
+<header class="list-head">
+  <h1>{{ partial "sect-icon.html" .Section }}{{ .Title }}</h1>
+  {{- with .Content }}<div class="content intro">{{ . }}</div>{{ end }}
+</header>
+
+{{- $pages := .Paginator.Pages }}
+{{- if $pages }}
+{{ partial "sort-bar.html" . }}
+<ul class="entries">
+  {{- range $pages }}{{ partial "entry.html" . }}{{ end }}
+</ul>
+{{ partial "paginator.html" . }}
+{{- else }}
+{{- /* 空的分類不掛選單，但頁面仍然在（有人可能留著網址）。給一條出路，不要只有一句話 */}}
+<p class="muted">這個分類還沒有文章。</p>
+<p><a href="{{ site.Home.RelPermalink }}">回首頁看最新的文章</a></p>
+{{- end }}
+{{ end }}
+
+{{ define "scripts" }}
+{{- $js := resources.Get "js/sort.js" | minify | fingerprint }}
+<script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+{{ end }}

@@ -1,0 +1,31 @@
+{{- /* 列表中的一篇文章。首頁、分類頁、最新頁共用這一份 ——
+       抄成兩份的話，改版型時一定只會改到其中一邊。
+
+       data-date / data-title 是給排序按鈕用的（assets/js/sort.js）。
+       data-date 是秒數而不是日期：同一天發的兩篇，只比日期分不出先後。
+       標籤放在 <a> 外面：巢狀的 <a> 是不合法的 HTML，瀏覽器會把它拆掉。 */ -}}
+<li class="entry-item" data-date="{{ .Date.Unix }}" data-title="{{ .Title }}">
+  <a class="entry" href="{{ .RelPermalink }}">
+    <span class="entry-body">
+      <span class="entry-meta">
+        {{- partial "sect-icon.html" .Section }}
+        <span class="entry-sect">{{ partial "sect-name.html" . }}</span>
+        <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time>
+        {{- if .Draft }} <em class="draft-tag">草稿</em>{{ end }}
+      </span>
+      <span class="entry-title">{{ .Title }}</span>
+      {{- /* 說明文字和 <meta name="description">、RSS 是同一個來源，這裡只是截得更短 */}}
+      {{- $desc := partial "description.html" . }}
+      {{- if gt (strings.RuneCount $desc) 90 }}{{ $desc = printf "%s…" (substr $desc 0 89) }}{{ end }}
+      <span class="entry-desc">{{ $desc }}</span>
+    </span>
+  </a>
+  {{- /* 標籤先顯示成文字，標籤頁做好之後再變成連結 */}}
+  {{- with .Params.tags }}
+  <p class="entry-tags">
+    {{- range . }}
+    <span>#{{ . }}</span>
+    {{- end }}
+  </p>
+  {{- end }}
+</li>

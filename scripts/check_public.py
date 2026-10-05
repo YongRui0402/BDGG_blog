@@ -14,6 +14,9 @@
    - sitemap.xml 列出的每一個網址(<loc>)
    - robots.txt 裡出現的每一個網址(Sitemap 那一行)
    這些網址由社群平台、閱讀器與搜尋引擎在站外讀,寫成相對路徑、http:// 或指到子路徑之外就抓不到。
+   另外,一頁的 canonical 與 og:url 講的是「這一頁自己的網址」,要等於它在成品裡實際的位置 ——
+   分頁的第 2 頁寫成第 1 頁的網址,連結檢查看不出來(那個網址確實存在)。
+   Hugo 產生的轉址頁(<meta http-equiv="refresh">)例外,它的 canonical 本來就指向別頁。
    feed 與 sitemap 本身也要是解析得了的 XML。
    (sitemap 與 feed 的 xmlns 是 http:// 開頭的命名空間名稱,不是連結,所以檢查的是上面列的那些值,
    不是在整個檔案裡找 http:// 這個字串。)
@@ -55,11 +58,21 @@ class PageScan(HTMLParser):
         super().__init__()
         self.urls = []
         self.site_urls = []
+        # 這一頁說「我自己的網址是這個」的地方:(出處, 網址)
+        self.own_urls = []
+        self.is_redirect = False
         self.has_draft = False
 
     def handle_starttag(self, tag, attrs):
-        if tag == "meta" and dict(attrs).get("property") in URL_META:
-            self.site_urls.append((dict(attrs).get("content") or "").strip())
+        attr = dict(attrs)
+        if tag == "meta" and attr.get("property") in URL_META:
+            self.site_urls.append((attr.get("content") or "").strip())
+        if tag == "meta" and attr.get("property") == "og:url":
+            self.own_urls.append(("og:url", (attr.get("content") or "").strip()))
+        if tag == "link" and "canonical" in (attr.get("rel") or "").split():
+            self.own_urls.append(("canonical", (attr.get("href") or "").strip()))
+        if tag == "meta" and (attr.get("http-equiv") or "").lower() == "refresh":
+            self.is_redirect = True
         for name, value in attrs:
             if value is None:
                 continue
@@ -239,6 +252,14 @@ def check(public, base_url):
             problem = site_url_problem(public, url, base, base_path)
             if problem:
                 problems.append(f"{rel}: 分享用的 meta {problem}")
+        if not scan.is_redirect:
+            own_url = f"{base.scheme}://{base.netloc}{base_path}{rel.removesuffix('index.html')}"
+            for what, url in scan.own_urls:
+                # 網址本身有問題(http://、子路徑之外、檔案不存在)上面已經報過,不重複報
+                if site_url_problem(public, url, base, base_path) is None and unquote(url) != own_url:
+                    problems.append(
+                        f"{rel}: {what} 寫成 {url!r},應該是這一頁自己的網址 {own_url!r}"
+                    )
 
     return stats, problems
 

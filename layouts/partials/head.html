@@ -4,6 +4,19 @@
 
   {{- /* 404 頁的 .Title 是 Hugo 內建的英文字串，換成和頁面上一樣的中文 */}}
   {{- $pageTitle := cond (eq .Kind "404") "找不到這個頁面" .Title }}
+
+  {{- /* 分類頁超過一頁時，第 2 頁以後有自己的網址，但 .Permalink 永遠是第 1 頁的。
+         不換掉的話，第 2 頁的 canonical 會說「我是第 1 頁的複本」。
+         .Paginator 只能在會分頁的頁面種類上取，在別種頁面上取會讓建置失敗。 */}}
+  {{- $url := .Permalink }}
+  {{- if eq .Kind "section" }}
+  {{- with .Paginator }}
+  {{- if gt .PageNumber 1 }}
+  {{- $url = .URL | absURL }}
+  {{- $pageTitle = printf "%s（第 %d 頁）" $pageTitle .PageNumber }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
   {{- $title := cond .IsHome site.Title (printf "%s · %s" $pageTitle site.Title) }}
   <title>{{ $title }}</title>
 
@@ -19,14 +32,14 @@
   {{- /* 404 頁沒有自己的網址（它出現在任何不存在的網址上），不給 canonical 與分享用的 meta */}}
   {{- if ne .Kind "404" }}
   {{- $isPost := and .IsPage (ne .Section "") }}
-  <link rel="canonical" href="{{ .Permalink }}">
+  <link rel="canonical" href="{{ $url }}">
 
   {{- /* 社群分享的預覽。網址與圖都必須是完整網址，各家平台不吃相對路徑。
          圖固定用預設那一張；標題不加站名，站名另外放在 og:site_name。 */}}
   <meta property="og:type" content="{{ cond $isPost `article` `website` }}">
   <meta property="og:title" content="{{ cond .IsHome site.Title $pageTitle }}">
   <meta property="og:description" content="{{ $desc }}">
-  <meta property="og:url" content="{{ .Permalink }}">
+  <meta property="og:url" content="{{ $url }}">
   <meta property="og:site_name" content="{{ site.Title }}">
   <meta property="og:image" content="{{ "og-default.png" | absURL }}">
   <meta property="og:image:alt" content="{{ site.Title }}：{{ site.Params.tagline }}">

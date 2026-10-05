@@ -108,6 +108,49 @@ class CheckPublicTest(unittest.TestCase):
         self.assertEqual(problems, [])
         self.assertEqual(stats["site_urls"], 2)
 
+    def test_canonical_pointing_at_another_page_is_blocked(self):
+        # 分頁的第 2 頁把第 1 頁的網址當成自己的:那個網址存在,連結檢查不會擋
+        self.write("list/index.html", "第 1 頁")
+        self.write(
+            "list/page/2/index.html",
+            '<link rel="canonical" href="https://example.github.io/blog/list/">',
+        )
+        self.assert_blocked("list/page/2/index.html", "canonical", "自己的網址")
+
+    def test_share_url_pointing_at_another_page_is_blocked(self):
+        self.write("list/index.html", "第 1 頁")
+        self.write(
+            "list/page/2/index.html",
+            '<meta property="og:url" content="https://example.github.io/blog/list/">',
+        )
+        self.assert_blocked("list/page/2/index.html", "og:url", "自己的網址")
+
+    def test_unquoted_canonical_is_still_checked(self):
+        # --minify 之後的樣子
+        self.write("list/index.html", "第 1 頁")
+        self.write(
+            "list/page/2/index.html",
+            "<link rel=canonical href=https://example.github.io/blog/list/>",
+        )
+        self.assert_blocked("canonical", "自己的網址")
+
+    def test_percent_encoded_canonical_passes(self):
+        self.write(
+            "標籤/index.html",
+            '<link rel="canonical" href="https://example.github.io/blog/%E6%A8%99%E7%B1%A4/">',
+        )
+        self.assertEqual(self.problems(), [])
+
+    def test_redirect_page_may_point_elsewhere(self):
+        # Hugo 替分頁的第 1 頁產生的轉址頁:/list/page/1/ → /list/
+        self.write("list/index.html", "第 1 頁")
+        self.write(
+            "list/page/1/index.html",
+            '<link rel="canonical" href="https://example.github.io/blog/list/">'
+            '<meta http-equiv="refresh" content="0; url=https://example.github.io/blog/list/">',
+        )
+        self.assertEqual(self.problems(), [])
+
     def test_unquoted_share_meta_is_still_checked(self):
         # --minify 之後的樣子
         self.write("about/index.html", "<meta property=og:image content=/blog/og.png>")

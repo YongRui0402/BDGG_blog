@@ -197,6 +197,7 @@ h1 .sect-icon { width: .82em; height: .82em; color: var(--fg-muted); }
   flex-wrap: wrap;
   gap: .3rem .5rem;
   font-size: .76rem;
+  color: var(--fg-muted);
 }
 .entry-tags a {
   color: var(--fg-muted);

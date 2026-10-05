@@ -4,9 +4,8 @@
 {{- $updated := gt (.Lastmod.Sub .Date).Hours 24.0 }}
 <article class="post">
   <header class="post-head">
-    {{- /* 分區先顯示成文字：分區列表頁還沒有，不放點了會 404 的連結 */}}
     {{- with partial "sect-name.html" . }}
-    <span class="sect">{{ partial "sect-icon.html" $.Section }}{{ . }}</span>
+    <a class="sect" href="{{ (site.GetPage (printf "/%s" $.Section)).RelPermalink }}">{{ partial "sect-icon.html" $.Section }}{{ . }}</a>
     {{- end }}
 
     <h1>{{ .Title }}</h1>

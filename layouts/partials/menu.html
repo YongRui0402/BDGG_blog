@@ -1,0 +1,11 @@
+{{- /* 主選單裡要顯示的項目：hugo.toml 的 [[menus.main]]，去掉還沒有文章的分類。
+       六個分類都寫在設定裡；哪一個有了第一篇文章，它就自己出現在選單與首頁的卡片上，
+       不必回頭改設定。空的分類頁面仍然存在，只是不從導覽進去。
+       用法：{{ range partial "menu.html" . }} */ -}}
+{{- $items := slice -}}
+{{- range site.Menus.main -}}
+  {{- $empty := false -}}
+  {{- with .Page }}{{ $empty = and .IsSection (not .RegularPages) }}{{ end -}}
+  {{- if not $empty }}{{ $items = $items | append . }}{{ end -}}
+{{- end -}}
+{{- return $items -}}
