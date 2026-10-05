@@ -24,7 +24,7 @@
 |---|---|---|---|---|---|
 | 1 | push 就上線 | — | [x] | 2026-10-05 | `fb80377` |
 | 2 | 基本版面 | 1 | [x] | 2026-10-05 | `5ce4506` |
-| 3 | 文章頁的閱讀體驗 | 2 | [ ] | | |
+| 3 | 文章頁的閱讀體驗 | 2 | [x] | 2026-10-05 | `5cf28ba` |
 | 4 | 被找到與被訂閱 | 3 | [ ] | | |
 | 5 | 分區與首頁列表 | 3 | [ ] | | |
 | 6 | 標籤 | 5 | [ ] | | |
@@ -124,10 +124,14 @@
 4. **絕對網址**(canonical、社群分享圖、RSS):`.Permalink`,或 `{{ "og-default.png" | absURL }}`,同樣不帶開頭的斜線。
 5. **選單**:一律 `pageRef`,不寫 `url`。`pageRef` 指到不存在的頁面時 Hugo 不報錯、只給空的連結 ——
    成品檢查會擋下空的 `href`。
-6. **Markdown 內文的站內連結**:不能寫 `/x/`(成品檢查會擋)。功能 3 要決定作者該怎麼寫 ——
-   實測過兩條路都通:`relref` shortcode;或在 `hugo.toml` 設
-   `markup.goldmark.renderHooks.link.useEmbedded = "always"`,之後 `[字](/projects/one/)`、
-   `[字](/projects/one)`、`[字](projects/one.md)` 都會被解析成 `/BDGG_blog/projects/one/`。
+6. **Markdown 內文的站內連結與圖片**(功能 3 定案):作者寫一般的 Markdown 連結,由 Hugo 解析。
+   `hugo.toml` 設了 `markup.goldmark.renderHooks.link.useEmbedded = "always"`(圖片 `image` 同樣),
+   `[字](/learning/one/)`、`[字](/learning/one)`、`[字](one.md)` 都會變成 `/BDGG_blog/learning/one/`。
+   沒選 `relref` shortcode,是因為讀者在 GitHub 上看原稿時會看到一串 `{{< relref >}}`。
+   - 指到不存在的頁面時 **Hugo 不報錯、原樣輸出**,靠成品檢查擋(實測:`/learning/nope/` 與 `nope.md` 都被擋下)
+   - 頁內錨點 `[字](#標題)` 會被改寫成 `/BDGG_blog/learning/one/#標題`,仍然是同一頁,可以用
+   - **圖片要放在文章旁邊**(文章改成 `content/<分區>/<檔名>/index.md`,圖放同一個目錄,寫 `![說明](圖.png)`)。
+     放在 `static/` 再寫 `![](/img/x.png)` 不會被解析,成品檢查會擋
 
 ### 版面(功能 2,2026-10-05)
 
@@ -143,7 +147,7 @@
 
 - 版型裡一律寫 `site.Title`、`site.Params.x`,不寫 `.Site.`。
 - **`baseof`**:沒有 `data-baseurl`(功能 8 要加時寫 `data-baseurl="{{ "" | relURL }}"`);
-  沒有複製程式碼的腳本(功能 3 加);`{{ block "scripts" . }}` 已經在,
+  複製程式碼的腳本已在功能 3 加上;`{{ block "scripts" . }}` 已經在,
   功能 5、8 的版型直接 `{{ define "scripts" }}` 就會輸出。
 - **`head`**:目前只有標題、作者、兩份樣式、favicon、GA4。說明文字、canonical、
   社群分享的 meta、feed 宣告、`article:published_time` 都留給功能 4。
@@ -155,7 +159,7 @@
 - **`404`**:只有說明與回首頁。分區連結等功能 5、搜尋框等功能 8。
   這一頁會出現在任意深度的網址上,連結一定要是從網域根算起的路徑
   (`.RelPermalink`、`"x/" | relURL` 都是),不能寫相對路徑。
-- **`single`、`index`** 是配合新版面改的精簡版,功能 3、功能 5 會整份換掉。
+- **`single`** 已在功能 3 換成完整的文章頁;**`index`** 目前是「站名 + 暫時的文章清單」,功能 5 整份換掉。
 - **`hugo.toml` 作者欄**:原架構那段匿名規則的註解沒有搬進來,功能 7 不必再處理它。
 
 **`main.css`**
@@ -173,10 +177,8 @@
 - **`body` 多了 `overflow-wrap: break-word`**,原樣式沒有。實測 360px 寬時,內文一個很長的網址會把
   整頁撐出橫向捲軸(頁面寬度變成 1139px);加上之後長字串會從中間折行。
   `pre` 與表格不受影響,仍然是自己橫向捲。
-- **表格在 360px 寬**會自己橫向捲,不會撐開頁面;但中文欄位會被擠到一行一個字,不好讀。
-  這是文章頁的事,功能 3 決定要不要處理(例如讓儲存格不換行)。
-- `syntax.css` 已經載入,但 `markup.highlight.noClasses = false` 還沒設(功能 3)。
-  沒設之前 Hugo 產出的程式碼區塊帶行內樣式,不會跟著深色模式切換。
+- **表格在 360px 寬**:功能 3 已處理(表頭不換行、每一欄至少 5em),見「文章頁(功能 3)」。
+- `syntax.css` 與 `markup.highlight.noClasses = false` 都已就位(功能 3),程式碼的顏色跟著深色模式切換。
 
 **實測到的行為**
 
@@ -205,6 +207,80 @@
 - **先確認量得出問題**:這個方法在還沒加 `overflow-wrap` 時量到了 1139 / 360,所以它回報「沒有橫向捲動」是可信的。
   之後要驗時,記得用一個內容夠刁鑽的頁面(長網址、長程式碼、寬表格、很長的標題),只量首頁量不出東西。
 
+### 文章頁(功能 3,2026-10-05)
+
+**這一項定下的事**
+
+- **第一篇文章**放在 `learning`(學習筆記):`content/learning/claude-mod-quick-test.md`。
+  內容是當次對話實際做的測試(站主給題目,agent 起草,站主同意後發布)。
+- **文章的 commit 用 `post:`**(例:`post: Claude mod 簡易測試與說明`),和改開發文件的 `docs:` 分開。
+  這是自訂的 type,Conventional Commits 允許;檢查腳本會給一個「不在常見清單」的 WARN,可以忽略。
+  站主若想改用別的寫法,從下一篇開始換即可,README 的「怎麼發一篇文」要跟著改。
+- **文章網址** `/<分區>/<slug>/`,`[permalinks.page]` 六個分區都寫 `:slugorcontentbasename`。
+  實測三種寫法:不設定時巢狀目錄會進網址(`/learning/nested/deep/`);原架構的 `:slug` 在沒寫 slug 時
+  會退而用標題,中文標題就變成中文網址;`:slugorcontentbasename` 沒寫 slug 時用檔名。
+- **分區列表頁還沒有**:`disableKinds` 多了 `"section"`。沒關的話 Hugo 找不到列表版型,
+  `--panicOnWarning` 會讓建置失敗。關掉之後 `site.GetPage "/learning"` 仍然拿得到分區的 `title`,
+  所以文章頁上的分區名稱照常顯示,只是**先顯示成文字**(`<span class="sect">`),不是連結。
+- **標籤也先顯示成文字**(`<p class="tags"><span>#標籤</span>`)。
+- **新增分區的做法**:一個分區第一次有文章時,先加 `content/<分區>/_index.md`(只要 `title`)。
+  沒有它,文章頁上不會出現分區名稱(不會報錯)。目前只有 `learning` 有。
+- **`make new POST=<分區>/<檔名>`**:規格沒列,加上是因為 Hugo 下載在 `.hugo-bin/`、不在 PATH 上,
+  少了它範本用不到。
+- **`hasCJKLanguage = true`**:原架構沒設。實測一篇八百多字的中文文章,沒設時字數算成 6、閱讀時間 1 分鐘;
+  設了之後是 844 字、2 分鐘。功能 5 的摘要長度(`summaryLength`)也受這個設定影響。
+- **`staleAfterMonths = 12`** 在 `hugo.toml` 的 `[params]`。過期提示用建置當下的時間算,
+  所以一篇文章「過期」是在它滿 12 個月之後的下一次建置才會顯示,不是自動的。
+
+**和原版型不同的地方(都是實測到問題才改的)**
+
+- **深色模式下程式碼的標點看不見**。原 `syntax.css` 的淺色那份沒有包在媒體查詢裡,
+  而 github-dark 那份沒有定義標點(`.p`)與 `.na`、`.nb`、`.bp` 的顏色,所以深色模式下這幾種
+  留著淺色版的深色字。改成兩份各自包進 `prefers-color-scheme`。重新產生樣式時要記得兩份都包。
+- **複製鈕會多複製空行**。原腳本用 `innerText`;上色後每一行是 `display:flex` 的區塊,
+  `innerText` 會在行與行之間多補一個換行(實測:兩行的程式碼貼出來中間多一個空行)。
+  改用 `textContent`,並拿掉結尾的換行(貼進終端機時不會直接執行)。
+  沒有標語言的區塊不受影響,所以只測純文字區塊看不出這個問題。
+- **表格**:表頭不換行、每一欄至少 `5em`。360px 寬時四欄的表格改成自己橫向捲(量到 400 / 320),
+  不再把欄位擠成一行一兩個字;頁面本體仍然不捲。
+- **`sect-name` 多一個判斷**:`content/` 根目錄的單頁沒有分區,原寫法會讓 `GetPage "/"` 拿到首頁、
+  把站名當成分區名顯示。
+- **空的區塊不輸出**:`toc: true` 但內文沒有 h2、h3 時不輸出目錄框;沒有上下篇時不輸出 `<nav class="pager">`。
+- 版型裡一律 `site.Params`、`site.GetPage`(原版型是 `.Site.`)。
+
+**之後各項要接的地方**
+
+- **功能 4**:文章的 `description` 目前沒有任何版型在用,等 meta 與 RSS。
+- **功能 5**:① 把 `"section"` 從 `disableKinds` 拿掉;② `single.html` 的分區從 `<span class="sect">` 改成連結,
+  用 `(site.GetPage (printf "/%s" .Section)).RelPermalink`(原版型是 `"/x/" | relURL`,子路徑下會壞);
+  ③ `index.html` 的暫時清單(`<section class="recent">`,只列分區底下的文章)整份換掉;
+  ④ 其餘五個分區的 `_index.md`。原架構的 `_index.md` 還有 `blurb` 與一段內文,這次的 `learning/_index.md` 只有 `title`。
+- **功能 6**:`single.html` 的標籤從 `<span>` 改成連結。`main.css` 的 `.tags a` 已經備好
+  (顏色改成繼承 `.tags`,文字與連結同色)。
+- **功能 7**:`single.html` 已經用 `.Section` 判斷 —— 沒有分區的單頁不輸出分區、日期、閱讀時間、
+  過期提示與上下篇(用一個放在 `content/` 根目錄的假頁面看過)。關於頁直接用這份版型即可。
+  要注意 front matter 的 `toc`、`key_points`、`takeaway`、`tags` 仍然會輸出,關於頁不要寫這幾個欄位。
+- **功能 8**:搜尋索引要排除草稿以外,也留意 `where site.RegularPages "Section" "ne" ""` 這個條件
+  (首頁清單用它排除根目錄的單頁)。
+
+**實測到的行為**
+
+- **發一篇文的時間**:`git push` 到公開網址回 200,**24 秒**(push 本身 2 秒)。零手動步驟。
+  線上的 8 個檔案抓回來和本機 `make check` 的成品逐位元相同。
+- **日期在未來的文章不會被建出來,而且沒有任何警告**。起草時把日期寫成半小時後,
+  建置成功、成品檢查也通過,文章就是不在 —— 是用瀏覽器量測時拿到 404 才發現的。
+  範本的 `date` 填的是開檔當下的時間,正常流程不會遇到;手改日期時要留意。README 有寫。
+- **草稿**:`draft: true` 的文章 `make check` 之後不在 `public/` 裡;反過來用 `--buildDrafts` 建,
+  成品檢查會因為 `draft-tag` 擋下來。兩個方向都試過。
+- **未登入讀原稿**:GitHub 的 blob 頁回 200;raw 內容和本機檔案相同。
+- **線上頁面**(無頭 Chrome,360 與 1280 寬、深淺色各一次):頁面本體沒有橫向捲動(360 / 360);
+  12 個程式碼區塊在 360px 有 10 個自己橫向捲;深淺色的關鍵字顏色不同(淺 `rgb(207,34,46)`、深 `rgb(255,123,114)`);
+  沒有 400 以上的請求、console 沒有錯誤;12 個複製鈕按下後剪貼簿的內容都等於原始碼。
+- **手機上的複製鈕會蓋住第一行的右端**:觸控裝置沒有 hover,按鈕一律顯示(原設計)。
+  程式碼可以橫向捲,被蓋住的字捲得出來。這次沒有改;要改的話是讓觸控裝置的 `pre` 上方多留一行。
+- **`.TableOfContents`** 會輸出一個 `<nav id="TableOfContents">`,外面又包了一層 `<nav class="toc">`,
+  是原版型的寫法,沒有動。
+
 ### 建置與成品檢查(功能 1)
 
 - **`make check`** = 刪掉 `public/` → `hugo --gc --minify --panicOnWarning` → 檢查器的對照組測試 → 成品檢查。
@@ -218,16 +294,16 @@
 - **成品檢查**(`scripts/check_public.py`)看的是每個 HTML 的 `href` 與 `src`、class 含 `draft-tag` 的元素、
   以及所有檔案裡的 `192.168.`。之後的功能要注意:
   - 網址若放在別的屬性(`srcset`、`data-baseurl`、`<meta content>` 裡的分享圖),檢查器看不到,要跟著擴充
-  - 功能 3 搬文章頁時,草稿標記沿用 `draft-tag` 這個 class;要改名就連檢查器與它的測試一起改。
-    功能 2 之後這個標記在 `layouts/_default/single.html`(精簡版的文章頁),不在 `baseof` 了
+  - 草稿標記是 `layouts/_default/single.html` 裡 class 為 `draft-tag` 的元素;要改名就連檢查器與它的測試一起改
   - 新增一種要擋的情況,就在 `scripts/test_check_public.py` 加一個假成品,確認真的會擋
   - `--minify` 會拿掉屬性的引號(`class=draft-tag`),所以不能用 `grep 'class="draft-tag"'` 這種寫法檢查成品
 - **還沒做到的頁面種類先關掉**(`hugo.toml` 的 `disableKinds`),輪到時再打開:
-  RSS、sitemap、`robots.txt` → 功能 4;`taxonomy`、`term` → 功能 6。(`404` 已在功能 2 打開。)
+  RSS、sitemap、`robots.txt` → 功能 4;`section`(分區列表頁,功能 3 關上的)→ 功能 5;
+  `taxonomy`、`term` → 功能 6。(`404` 已在功能 2 打開。)
 - 功能 1 的測試頁 `content/link-test.md` 與選單的「連結測試」已在功能 2 拿掉。
 - **workflow 只用 GitHub 官方的三個 action**(`checkout@v7`、`upload-pages-artifact@v5`、`deploy-pages@v5`),
   不覆蓋 `baseURL`(直接用 `hugo.toml` 的值)。
-- **日期出現之後**(功能 3),時區寫在 `hugo.toml` 的 `timeZone`,不要靠 CI 的環境變數,本機與 CI 的成品才會一樣。
+- **時區**寫在 `hugo.toml` 的 `timeZone = "Asia/Taipei"`(功能 3),不靠 CI 的環境變數,本機與 CI 的成品才會一樣。
 - 本機需要 Python 3.11 以上(檢查器用標準函式庫的 `tomllib` 讀 `hugo.toml`)。
 - **`main` 上有一筆故意建不起來的 commit**:`1e09eca`(功能 1 的失敗測試,站主選擇照驗收原文推到 `main`),
   下一筆 `fb80377` 還原。收尾檢查「`main` 每個 commit 都建得起來」時,這一筆是已知的例外。

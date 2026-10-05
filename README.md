@@ -36,7 +36,7 @@ git commit -m "post: 文章標題"
 git push
 ```
 
-push 之後大約一分鐘,文章會出現在 `https://yongrui0402.github.io/BDGG_blog/learning/my-post/`,中間沒有其他步驟。
+push 之後一分鐘內(第一篇實測 24 秒),文章會出現在 `https://yongrui0402.github.io/BDGG_blog/learning/my-post/`,中間沒有其他步驟。
 
 幾件要知道的事:
 
