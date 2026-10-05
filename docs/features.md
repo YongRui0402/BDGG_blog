@@ -22,7 +22,7 @@
 
 | # | 功能需求 | 前置 | 狀態 | 完成日期 | commit |
 |---|---|---|---|---|---|
-| 1 | push 就上線 | — | [ ] | | |
+| 1 | push 就上線 | — | [x] | 2026-10-05 | `fb80377` |
 | 2 | 基本版面 | 1 | [ ] | | |
 | 3 | 文章頁的閱讀體驗 | 2 | [ ] | | |
 | 4 | 被找到與被訂閱 | 3 | [ ] | | |
@@ -62,8 +62,8 @@
 
 - 站台網址 `https://yongrui0402.github.io/BDGG_blog/`,是子路徑,不綁自訂網域。
 - 原版型有至少 16 處寫成 `{{ "/tags/" | relURL }}`(開頭帶斜線),選單網址也是 `/projects/` 這種寫法。
-  依 Hugo 文件,這在子路徑下不會補上 `/BDGG_blog/`。**功能 1 會實測並定下全站的寫法**,
-  記在下面的「已定下的做法」;之後每一項搬版型時都照那個寫法改。
+  功能 1 實測過:`relURL` 那一種在子路徑下確實不會補上 `/BDGG_blog/`,選單那一種 Hugo 會補。
+  **全站的寫法記在下面的「已定下的做法」,之後每一項搬版型時都照那個寫法改。**
 
 **建置與整合**
 
@@ -93,7 +93,69 @@
 
 - **GitHub Pages**:來源已設為 GitHub Actions(2026-10-05,站主同意後以 `gh` 設定)。不需要再到網頁上改。
 - **成品檢查**要包含「成品不得出現 `192.168.`」這一項(站主 2026-10-05 決定)。
-- 全站連結的寫法:_功能 1 實測後填_
+
+### 全站連結的寫法(功能 1 實測,2026-10-05)
+
+在 Hugo 0.165.0、`baseURL = "https://yongrui0402.github.io/BDGG_blog/"` 下,各種寫法實際產出的網址:
+
+| 寫法 | 產出 | 能用嗎 |
+|---|---|---|
+| `{{ "/projects/" \| relURL }}` | `/projects/` | ✗ 指到網域根目錄 |
+| `{{ "projects/" \| relURL }}` | `/BDGG_blog/projects/` | ✓ |
+| `{{ "/" \| relURL }}` | `/` | ✗ |
+| `{{ "" \| relURL }}` | `/BDGG_blog/` | ✓ |
+| `{{ "/projects/" \| absURL }}` | `https://yongrui0402.github.io/projects/` | ✗ |
+| `{{ "projects/" \| absURL }}` | `https://yongrui0402.github.io/BDGG_blog/projects/` | ✓ |
+| `.RelPermalink`、`site.Home.RelPermalink`、`(site.GetPage "/projects").RelPermalink` | `/BDGG_blog/…` | ✓ |
+| 選單 `pageRef = "/projects"` 的 `.URL` | `/BDGG_blog/projects/` | ✓ |
+| 選單 `url = "/projects/"` 的 `.URL` | `/BDGG_blog/projects/` | ✓(Hugo 會替設定檔裡的選單補上子路徑,和原先的推測相反) |
+| 選單 `url = "projects/"` 的 `.URL` | `projects/` | ✗ 變成相對於目前頁面 |
+| Markdown 內文 `[字](/projects/one/)` | `/projects/one/` | ✗ |
+| Markdown 內文 `[字]({{< relref "/projects/one" >}})` | `/BDGG_blog/projects/one/` | ✓ |
+
+`relLangURL` 的結果和 `relURL` 相同。
+
+**定下的寫法**,之後每一項搬版型時照這個改:
+
+1. **連到站內的頁面**:拿得到頁面物件就用 `.RelPermalink`(首頁是 `site.Home.RelPermalink`)。
+2. **連到固定路徑或靜態檔**(標籤總覽、favicon、樣式、腳本、索引檔):`{{ "tags/" | relURL }}` ——
+   **開頭不帶斜線**。原版型的 `"/x/" | relURL` 一律把開頭的斜線拿掉;寫死的 `/favicon.ico` 改成 `{{ "favicon.ico" | relURL }}`。
+3. **站台根**(搜尋腳本要的 `data-baseurl`):`{{ "" | relURL }}`,不是 `"/" | relURL`。
+4. **絕對網址**(canonical、社群分享圖、RSS):`.Permalink`,或 `{{ "og-default.png" | absURL }}`,同樣不帶開頭的斜線。
+5. **選單**:一律 `pageRef`,不寫 `url`。`pageRef` 指到不存在的頁面時 Hugo 不報錯、只給空的連結 ——
+   成品檢查會擋下空的 `href`。
+6. **Markdown 內文的站內連結**:不能寫 `/x/`(成品檢查會擋)。功能 3 要決定作者該怎麼寫 ——
+   實測過兩條路都通:`relref` shortcode;或在 `hugo.toml` 設
+   `markup.goldmark.renderHooks.link.useEmbedded = "always"`,之後 `[字](/projects/one/)`、
+   `[字](/projects/one)`、`[字](projects/one.md)` 都會被解析成 `/BDGG_blog/projects/one/`。
+
+### 建置與成品檢查(功能 1)
+
+- **`make check`** = 刪掉 `public/` → `hugo --gc --minify --panicOnWarning` → 檢查器的對照組測試 → 成品檢查。
+  本機與 CI(`.github/workflows/deploy.yml`)跑的都是這一道。
+- **建置前一定先刪 `public/`**:Hugo 不會清掉上一次留下的頁面(`--cleanDestinationDir` 只管 `static/`)。
+  實測一篇用 `--buildDrafts` 建過的草稿,之後正常建置仍留在 `public/` 裡。
+- **`--panicOnWarning`**:警告一律當成失敗。**已棄用的寫法也算** —— `languageCode` 與
+  `.Language.LanguageCode` 在 0.158 起棄用,這個 repo 用 `locale` 與 `site.Language.Locale`。
+  原版型裡若有 `.Site.LanguageCode`、`.Language.LanguageCode` 這類寫法,搬進來時要改。
+- **`make preview`** 帶 `--buildDrafts --renderToMemory`:看得到草稿,而且不寫進 `public/`。
+- **成品檢查**(`scripts/check_public.py`)看的是每個 HTML 的 `href` 與 `src`、class 含 `draft-tag` 的元素、
+  以及所有檔案裡的 `192.168.`。之後的功能要注意:
+  - 網址若放在別的屬性(`srcset`、`data-baseurl`、`<meta content>` 裡的分享圖),檢查器看不到,要跟著擴充
+  - 功能 3 搬文章頁時,草稿標記沿用 `draft-tag` 這個 class;要改名就連檢查器與它的測試一起改
+  - 新增一種要擋的情況,就在 `scripts/test_check_public.py` 加一個假成品,確認真的會擋
+  - `--minify` 會拿掉屬性的引號(`class=draft-tag`),所以不能用 `grep 'class="draft-tag"'` 這種寫法檢查成品
+- **還沒做到的頁面種類先關掉**(`hugo.toml` 的 `disableKinds`),輪到時再打開:
+  RSS、sitemap、`robots.txt` → 功能 4;`taxonomy`、`term` → 功能 6;`404` → 功能 2。
+- **`content/link-test.md` 與選單的「連結測試」是功能 1 的測試頁**,功能 2 有正式的版面與選單後拿掉。
+- **workflow 只用 GitHub 官方的三個 action**(`checkout@v7`、`upload-pages-artifact@v5`、`deploy-pages@v5`),
+  不覆蓋 `baseURL`(直接用 `hugo.toml` 的值)。
+- **日期出現之後**(功能 3),時區寫在 `hugo.toml` 的 `timeZone`,不要靠 CI 的環境變數,本機與 CI 的成品才會一樣。
+- 本機需要 Python 3.11 以上(檢查器用標準函式庫的 `tomllib` 讀 `hugo.toml`)。
+- **`main` 上有一筆故意建不起來的 commit**:`1e09eca`(功能 1 的失敗測試,站主選擇照驗收原文推到 `main`),
+  下一筆 `fb80377` 還原。收尾檢查「`main` 每個 commit 都建得起來」時,這一筆是已知的例外。
+- **GitHub 預告 `ubuntu-latest` 自 2026-10-19 起換成 Ubuntu 26**(Actions 的執行紀錄上有提示)。
+  workflow 只靠 `make`、`curl`、`python3`,預期不受影響;那之後第一次 push 留意一下 Actions 是不是綠的。
 
 ---
 
