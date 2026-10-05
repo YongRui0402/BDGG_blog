@@ -4,8 +4,8 @@ locale = "zh-Hant-TW"
 defaultContentLanguage = "zh-tw"
 
 # 還沒做到的頁面種類先關掉,輪到那一項功能時再打開:
-# RSS、sitemap、robots.txt → 功能 4;標籤 → 功能 6;404 → 功能 2
-disableKinds = ["taxonomy", "term", "rss", "sitemap", "robotsTXT", "404"]
+# RSS、sitemap、robots.txt → 功能 4;標籤 → 功能 6
+disableKinds = ["taxonomy", "term", "rss", "sitemap", "robotsTXT"]
 
 [params]
   # tagline 出現在每一頁的頁首與首頁;description 是給搜尋引擎與社群分享看的說明文字。
