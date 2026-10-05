@@ -25,11 +25,7 @@
 {{- end }}
 
 {{- /* 分類的卡片跟著選單走：順序相同，還沒有文章的分類同樣不出現 */}}
-{{- $sections := slice }}
-{{- range partial "menu.html" . }}
-  {{- with .Page }}{{ if .IsSection }}{{ $sections = $sections | append . }}{{ end }}{{ end }}
-{{- end }}
-{{- with $sections }}
+{{- with partial "sections.html" . }}
 <section class="sections">
   <h2>分類</h2>
   <div class="cards">

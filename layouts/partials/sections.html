@@ -1,0 +1,8 @@
+{{- /* 有文章的分類，順序和選單相同。首頁的分類卡片與搜尋頁的分類快選都從這裡拿，
+       所以哪一個分類有了第一篇文章，兩處會一起出現。
+       用法：{{ range partial "sections.html" . }}，拿到的是分類頁（content/<分類>/_index.md）。 */ -}}
+{{- $sections := slice -}}
+{{- range partial "menu.html" . -}}
+  {{- with .Page }}{{ if .IsSection }}{{ $sections = $sections | append . }}{{ end }}{{ end -}}
+{{- end -}}
+{{- return $sections -}}
