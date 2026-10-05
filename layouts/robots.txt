@@ -1,0 +1,12 @@
+{{- /*
+  爬蟲只讀網域根的 robots.txt（RFC 9309 第 2.3 節）。這個站在子路徑底下，
+  這個檔會落在 /BDGG_blog/robots.txt，而網域根不歸這個 repo 管 ——
+  所以現在不會有爬蟲來讀它，下面的 Sitemap 那一行也就傳不到搜尋引擎手上。
+  要讓搜尋引擎知道 sitemap 在哪裡，得到各家的站長工具裡提交它的網址。
+
+  留著這個檔，是為了站台之後若搬到自己的網域（baseURL 不帶子路徑）時直接生效。
+*/ -}}
+User-agent: *
+Allow: /
+
+Sitemap: {{ "sitemap.xml" | absURL }}

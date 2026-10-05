@@ -204,6 +204,51 @@ class CheckPublicTest(unittest.TestCase):
         self.write("index.xml", "<rss><channel><description>it&rsquo;s</description></channel></rss>")
         self.assert_blocked("index.xml", "不是合法的 XML")
 
+    def write_sitemap(self, *locs):
+        self.write(
+            "sitemap.xml",
+            '<?xml version="1.0" encoding="utf-8"?>'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            + "".join(f"<url><loc>{loc}</loc></url>" for loc in locs)
+            + "</urlset>",
+        )
+
+    def test_sitemap_and_robots_with_site_urls_pass(self):
+        # sitemap 的 xmlns 本身是 http:// 開頭,不能因此被擋
+        self.write_sitemap("https://example.github.io/blog/", "https://example.github.io/blog/about/")
+        self.write(
+            "robots.txt",
+            "User-agent: *\nAllow: /\n\nSitemap: https://example.github.io/blog/sitemap.xml\n",
+        )
+        stats, problems = check(self.public, BASE_URL)
+        self.assertEqual(problems, [])
+        self.assertEqual(stats["site_urls"], 3)
+
+    def test_sitemap_with_http_url_is_blocked(self):
+        self.write_sitemap("http://example.github.io/blog/about/")
+        self.assert_blocked("sitemap.xml", "<loc>", "完整網址")
+
+    def test_sitemap_url_outside_subpath_is_blocked(self):
+        self.write_sitemap("https://example.github.io/about/")
+        self.assert_blocked("sitemap.xml", "之外")
+
+    def test_sitemap_url_to_missing_page_is_blocked(self):
+        self.write_sitemap("https://example.github.io/blog/nope/")
+        self.assert_blocked("sitemap.xml", "不存在")
+
+    def test_robots_with_http_sitemap_is_blocked(self):
+        self.write_sitemap("https://example.github.io/blog/")
+        self.write("robots.txt", "User-agent: *\nSitemap: http://example.github.io/blog/sitemap.xml\n")
+        self.assert_blocked("robots.txt", "完整網址")
+
+    def test_robots_pointing_at_missing_sitemap_is_blocked(self):
+        self.write("robots.txt", "User-agent: *\nSitemap: https://example.github.io/blog/sitemap.xml\n")
+        self.assert_blocked("robots.txt", "不存在")
+
+    def test_robots_sitemap_outside_subpath_is_blocked(self):
+        self.write("robots.txt", "Sitemap: https://example.github.io/sitemap.xml\n")
+        self.assert_blocked("robots.txt", "之外")
+
     def test_draft_marker_is_blocked(self):
         self.write("about/index.html", '<p class="note draft-tag">草稿</p>')
         self.assert_blocked("about/index.html", "草稿標記")

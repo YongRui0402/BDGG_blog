@@ -11,8 +11,12 @@
    - 社群分享用的 <meta property="og:url"> 與 <meta property="og:image">
    - RSS feed 裡的每一個網址:頻道與每一篇的連結、feed 自己的網址(要等於它實際的位置)、
      全文裡的連結與圖片
-   這些網址由社群平台與閱讀器在站外讀,寫成相對路徑或指到子路徑之外就抓不到。
-   feed 本身也要是解析得了的 XML。
+   - sitemap.xml 列出的每一個網址(<loc>)
+   - robots.txt 裡出現的每一個網址(Sitemap 那一行)
+   這些網址由社群平台、閱讀器與搜尋引擎在站外讀,寫成相對路徑、http:// 或指到子路徑之外就抓不到。
+   feed 與 sitemap 本身也要是解析得了的 XML。
+   (sitemap 與 feed 的 xmlns 是 http:// 開頭的命名空間名稱,不是連結,所以檢查的是上面列的那些值,
+   不是在整個檔案裡找 http:// 這個字串。)
 3. 成品裡沒有草稿標記(class 含 draft-tag 的元素)。
    正式建置本來就不會產出草稿;這是 --buildDrafts 被誤加時的保險。
 4. 成品的任何檔案都不含 192.168. 這個字串。
@@ -24,6 +28,7 @@
 """
 
 import argparse
+import re
 import sys
 import tomllib
 import xml.etree.ElementTree as ET
@@ -39,6 +44,8 @@ SKIP_SCHEMES = {"mailto", "tel", "data", "javascript"}
 URL_META = {"og:url", "og:image"}
 ATOM_LINK = "{http://www.w3.org/2005/Atom}link"
 CONTENT_ENCODED = "{http://purl.org/rss/1.0/modules/content/}encoded"
+SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+ABSOLUTE_URL = re.compile(r"https?://\S+")
 
 
 class PageScan(HTMLParser):
@@ -200,6 +207,21 @@ def check(public, base_url):
                 count, found = check_feed(public, rel, root, base, base_path)
                 stats["site_urls"] += count
                 problems.extend(found)
+            elif root.tag.startswith(SITEMAP_NS):
+                for loc in root.iter(SITEMAP_NS + "loc"):
+                    stats["site_urls"] += 1
+                    url = (loc.text or "").strip()
+                    problem = site_url_problem(public, url, base, base_path)
+                    if problem:
+                        problems.append(f"{rel}: <loc> {problem}")
+            continue
+
+        if rel == "robots.txt":
+            for url in ABSOLUTE_URL.findall(data.decode("utf-8", errors="replace")):
+                stats["site_urls"] += 1
+                problem = site_url_problem(public, url, base, base_path)
+                if problem:
+                    problems.append(f"{rel}: {problem}")
             continue
 
         if path.suffix != ".html":
