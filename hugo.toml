@@ -10,6 +10,7 @@ disableKinds = ["taxonomy", "term", "rss", "sitemap", "robotsTXT"]
 [params]
   # tagline 出現在每一頁的頁首與首頁;description 是給搜尋引擎與社群分享看的說明文字。
   # 兩者都描述「這裡有什麼內容」。
+  # 改了 tagline 要重畫分享圖:python3 scripts/make_og_image.py
   tagline = "技術筆記、學習心得，與做過的專案"
   description = "BDGG 的技術筆記、課程與學習心得、專案紀錄與隨筆。"
   author = "BDGG"
