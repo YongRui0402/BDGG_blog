@@ -1,0 +1,13 @@
+# Claude Code 的 skill 與本機設定,不進公開 repo
+.claude/
+
+# Hugo 的建置成品與快取
+public/
+resources/
+.hugo_build.lock
+
+# make 依 .hugo-version 下載的 Hugo
+.hugo-bin/
+
+# 跑檢查腳本時 Python 留下的快取
+__pycache__/
