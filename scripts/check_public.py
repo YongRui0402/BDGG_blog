@@ -8,8 +8,11 @@
    寫成 href="/tags/" 的連結建置時不會報錯,放上子路徑才會壞,所以要在這裡擋。
    寫了主機的站內連結(例如 canonical)還要和 baseURL 同一種協定,不能是 http://。
 2. 給站外讀的網址是站台底下的完整網址,而且成品裡有它:
-   社群分享用的 <meta property="og:url"> 與 <meta property="og:image">。
-   這些網址由社群平台去抓,寫成相對路徑或指到子路徑之外,平台就抓不到。
+   - 社群分享用的 <meta property="og:url"> 與 <meta property="og:image">
+   - RSS feed 裡的每一個網址:頻道與每一篇的連結、feed 自己的網址(要等於它實際的位置)、
+     全文裡的連結與圖片
+   這些網址由社群平台與閱讀器在站外讀,寫成相對路徑或指到子路徑之外就抓不到。
+   feed 本身也要是解析得了的 XML。
 3. 成品裡沒有草稿標記(class 含 draft-tag 的元素)。
    正式建置本來就不會產出草稿;這是 --buildDrafts 被誤加時的保險。
 4. 成品的任何檔案都不含 192.168. 這個字串。
@@ -23,6 +26,7 @@
 import argparse
 import sys
 import tomllib
+import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urljoin, urlsplit
@@ -33,6 +37,8 @@ PRIVATE_IP = b"192.168."
 SKIP_SCHEMES = {"mailto", "tel", "data", "javascript"}
 # content 是網址的 <meta>:社群平台會去抓,一定要是站台底下的完整網址
 URL_META = {"og:url", "og:image"}
+ATOM_LINK = "{http://www.w3.org/2005/Atom}link"
+CONTENT_ENCODED = "{http://purl.org/rss/1.0/modules/content/}encoded"
 
 
 class PageScan(HTMLParser):
@@ -123,6 +129,47 @@ def check_links(public, html_file, urls, base, base_path):
     return internal, problems
 
 
+def check_feed(public, rel, root, base, base_path):
+    """RSS feed 是給站外的閱讀器讀的,裡面每一個網址都要是完整網址。回傳 (網址數, 問題清單)。"""
+    count = 0
+    problems = []
+
+    def must_be_site_url(url, what):
+        nonlocal count
+        count += 1
+        problem = site_url_problem(public, (url or "").strip(), base, base_path)
+        if problem:
+            problems.append(f"{rel}: {what} {problem}")
+
+    own_url = f"{base.scheme}://{base.netloc}{base_path}{rel}"
+    for el in root.iter():
+        if el.tag == "link":
+            must_be_site_url(el.text, "<link>")
+        elif el.tag == "guid" and el.get("isPermaLink") != "false":
+            must_be_site_url(el.text, "<guid>")
+        elif el.tag == ATOM_LINK and el.get("rel") == "self":
+            count += 1
+            if el.get("href") != own_url:
+                problems.append(
+                    f"{rel}: feed 自己的網址寫成 {el.get('href')!r},應該是 {own_url!r}"
+                )
+        elif el.tag in ("description", CONTENT_ENCODED):
+            # 內容是 HTML。閱讀器不知道它原本在哪一頁,相對路徑(含 #錨點)沒有東西可以對
+            scan = PageScan()
+            scan.feed(el.text or "")
+            for url in scan.urls:
+                parts = urlsplit(url)
+                if parts.scheme in SKIP_SCHEMES:
+                    continue
+                if not (parts.scheme and parts.netloc):
+                    count += 1
+                    problems.append(f"{rel}: 內文裡的 {url!r} 不是完整網址,閱讀器裡會壞")
+                elif parts.netloc == base.netloc:
+                    must_be_site_url(url, "內文裡的")
+
+    return count, problems
+
+
 def check(public, base_url):
     """回傳 (統計, 問題清單)。"""
     public = Path(public)
@@ -142,6 +189,18 @@ def check(public, base_url):
         for lineno, line in enumerate(data.splitlines(), 1):
             if PRIVATE_IP in line:
                 problems.append(f"{rel}:{lineno}: 含有 {PRIVATE_IP.decode()}")
+
+        if path.suffix == ".xml":
+            try:
+                root = ET.fromstring(data)
+            except ET.ParseError as error:
+                problems.append(f"{rel}: 不是合法的 XML({error})")
+                continue
+            if root.tag == "rss":
+                count, found = check_feed(public, rel, root, base, base_path)
+                stats["site_urls"] += count
+                problems.extend(found)
+            continue
 
         if path.suffix != ".html":
             continue

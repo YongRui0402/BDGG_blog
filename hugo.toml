@@ -8,8 +8,17 @@ hasCJKLanguage = true
 timeZone = "Asia/Taipei"
 
 # 還沒做到的頁面種類先關掉,輪到那一項功能時再打開:
-# 分區列表頁 → 功能 5;RSS、sitemap、robots.txt → 功能 4;標籤 → 功能 6
-disableKinds = ["section", "taxonomy", "term", "rss", "sitemap", "robotsTXT"]
+# 分區列表頁 → 功能 5;sitemap、robots.txt → 功能 4;標籤 → 功能 6
+disableKinds = ["section", "taxonomy", "term", "sitemap", "robotsTXT"]
+
+# 只有首頁出 RSS(/index.xml,全站最新的文章)。分區頁與標籤頁明寫成只出 HTML:
+# 不寫的話 Hugo 預設每個分區、每個標籤各出一份 feed,而 layouts/_default/rss.xml
+# 收的是全站文章,每一份的內容都會一模一樣。
+[outputs]
+  home = ["html", "rss"]
+  section = ["html"]
+  taxonomy = ["html"]
+  term = ["html"]
 
 [params]
   # tagline 出現在每一頁的頁首與首頁;description 是給搜尋引擎與社群分享看的說明文字。

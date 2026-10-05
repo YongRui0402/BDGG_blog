@@ -138,6 +138,72 @@ class CheckPublicTest(unittest.TestCase):
         self.write("about/index.html", '<meta property="og:image" content="">')
         self.assert_blocked("分享用的 meta", "完整網址")
 
+    def write_feed(self, *, self_href=None, link=None, content=""):
+        """一份最小的 feed,裡面有一篇指向 about 頁的文章。"""
+        self_href = self_href or "https://example.github.io/blog/index.xml"
+        link = link or "https://example.github.io/blog/about/"
+        self.write(
+            "index.xml",
+            '<?xml version="1.0" encoding="utf-8"?>'
+            '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"'
+            ' xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>'
+            "<link>https://example.github.io/blog/</link>"
+            f'<atom:link href="{self_href}" rel="self"/>'
+            f'<item><link>{link}</link><guid isPermaLink="true">{link}</guid>'
+            "<description>A&amp;amp;B &amp;lt;b&amp;gt; 純文字</description>"
+            f"<content:encoded>{content}</content:encoded></item>"
+            "</channel></rss>",
+        )
+
+    def test_feed_with_site_urls_passes(self):
+        self.write("pic.png", "圖")
+        self.write_feed(
+            content="&lt;a href=&quot;https://example.github.io/blog/about/#top&quot;&gt;站內&lt;/a&gt;"
+            "&lt;img src=&quot;https://example.github.io/blog/pic.png&quot;&gt;"
+            "&lt;a href=&quot;https://example.com/&quot;&gt;外站&lt;/a&gt;"
+        )
+        stats, problems = check(self.public, BASE_URL)
+        self.assertEqual(problems, [])
+        # 頻道連結、feed 自己、文章的 link 與 guid、內文兩個站內網址
+        self.assertEqual(stats["site_urls"], 6)
+
+    def test_feed_self_link_pointing_at_home_is_blocked(self):
+        # 原版型的寫法:rss.xml 裡的 .Permalink 是首頁,不是 feed
+        self.write_feed(self_href="https://example.github.io/blog/")
+        self.assert_blocked("index.xml", "feed 自己的網址", "blog/index.xml")
+
+    def test_feed_item_link_outside_subpath_is_blocked(self):
+        self.write_feed(link="https://example.github.io/about/")
+        problems = self.problems()
+        self.assertEqual(len(problems), 2, problems)  # <link> 與 <guid> 各一
+        self.assertIn("<link>", problems[0])
+        self.assertIn("之外", problems[0])
+
+    def test_feed_item_link_to_missing_page_is_blocked(self):
+        self.write_feed(link="https://example.github.io/blog/nope/")
+        problems = self.problems()
+        self.assertEqual(len(problems), 2, problems)
+        self.assertIn("不存在", problems[1])
+
+    def test_feed_content_with_root_relative_link_is_blocked(self):
+        self.write_feed(content="&lt;a href=&quot;/blog/about/&quot;&gt;站內&lt;/a&gt;")
+        self.assert_blocked("index.xml", "'/blog/about/'", "不是完整網址")
+
+    def test_feed_content_with_anchor_only_link_is_blocked(self):
+        self.write_feed(content="&lt;a href=&quot;#top&quot;&gt;頁內&lt;/a&gt;")
+        self.assert_blocked("'#top'", "不是完整網址")
+
+    def test_feed_content_with_missing_image_is_blocked(self):
+        self.write_feed(
+            content="&lt;img src=&quot;https://example.github.io/blog/nope.png&quot;&gt;"
+        )
+        self.assert_blocked("內文裡的", "不存在")
+
+    def test_broken_xml_is_blocked(self):
+        # 原版型在摘要含引號時的產出:沒有宣告過的實體
+        self.write("index.xml", "<rss><channel><description>it&rsquo;s</description></channel></rss>")
+        self.assert_blocked("index.xml", "不是合法的 XML")
+
     def test_draft_marker_is_blocked(self):
         self.write("about/index.html", '<p class="note draft-tag">草稿</p>')
         self.assert_blocked("about/index.html", "草稿標記")

@@ -11,6 +11,11 @@
   <meta name="description" content="{{ $desc }}">
   <meta name="author" content="{{ site.Params.author }}">
 
+  {{- /* 訂閱源的宣告每一頁都放：讀者把任何一篇的網址貼進閱讀器，都找得到 feed */}}
+  {{- with site.Home.OutputFormats.Get "rss" }}
+  <link rel="alternate" type="application/rss+xml" title="{{ site.Title }}" href="{{ .Permalink }}">
+  {{- end }}
+
   {{- /* 404 頁沒有自己的網址（它出現在任何不存在的網址上），不給 canonical 與分享用的 meta */}}
   {{- if ne .Kind "404" }}
   {{- $isPost := and .IsPage (ne .Section "") }}
