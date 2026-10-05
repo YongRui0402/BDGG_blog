@@ -10,23 +10,37 @@
 </div>
 {{- end }}
 
-{{- /* 暫時的文章清單：讓讀者從首頁點得到文章。正式的首頁列表之後整份換掉。
-       只列分區底下的文章，content/ 根目錄的單頁不算。 */}}
-{{- with (where site.RegularPages "Section" "ne" "").ByDate.Reverse }}
+{{- /* 最新的 10 篇，六個分類都算；content/ 根目錄的單頁（最新、關於）不算。
+       和 RSS 收的是同一批文章。全部的文章在「最新」頁。 */}}
+{{- $posts := (where site.RegularPages "Section" "ne" "").ByDate.Reverse }}
+{{- if $posts }}
 <section class="recent">
-  <h2>文章</h2>
+  <h2>最新</h2>
   <ul class="entries">
-    {{- range . }}
-    <li>
-      <a class="entry" href="{{ .RelPermalink }}">
-        <span class="entry-body">
-          <span class="entry-meta"><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time></span>
-          <span class="entry-title">{{ .Title }}</span>
-        </span>
-      </a>
-    </li>
-    {{- end }}
+    {{- range first 10 $posts }}{{ partial "entry.html" . }}{{ end }}
   </ul>
+</section>
+{{- else }}
+<p class="muted">還沒有文章。</p>
+{{- end }}
+
+{{- /* 分類的卡片跟著選單走：順序相同，還沒有文章的分類同樣不出現 */}}
+{{- $sections := slice }}
+{{- range partial "menu.html" . }}
+  {{- with .Page }}{{ if .IsSection }}{{ $sections = $sections | append . }}{{ end }}{{ end }}
+{{- end }}
+{{- with $sections }}
+<section class="sections">
+  <h2>分類</h2>
+  <div class="cards">
+    {{- range . }}
+    <a class="card" href="{{ .RelPermalink }}">
+      <strong>{{ partial "sect-icon.html" .Section }}{{ .Title }}</strong>
+      <span class="muted">{{ len .RegularPages }} 篇</span>
+      {{- with .Params.blurb }}<span class="card-blurb">{{ . }}</span>{{ end }}
+    </a>
+    {{- end }}
+  </div>
 </section>
 {{- end }}
 {{ end }}

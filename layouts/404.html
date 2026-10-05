@@ -5,6 +5,13 @@
 
 <div class="content">
   <p>網址可能打錯了，或者這篇文章被改過網址。</p>
-  <p><a href="{{ site.Home.RelPermalink }}">回首頁</a></p>
+  {{- /* 這一頁會出現在任意深度的網址上，連結一定要是從網域根算起的路徑。
+         選單裡的項目（有文章的分類、最新）都是。 */}}
+  <p>
+    <a href="{{ site.Home.RelPermalink }}">回首頁</a>
+    {{- range partial "menu.html" . }} ·
+    <a href="{{ .URL }}">{{ .Name }}</a>
+    {{- end }}
+  </p>
 </div>
 {{ end }}
