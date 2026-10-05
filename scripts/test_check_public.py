@@ -42,7 +42,7 @@ class CheckPublicTest(unittest.TestCase):
     def test_clean_site_passes(self):
         stats, problems = check(self.public, BASE_URL)
         self.assertEqual(problems, [])
-        self.assertEqual(stats, {"files": 2, "html": 2, "links": 2})
+        self.assertEqual(stats, {"files": 2, "html": 2, "links": 2, "site_urls": 0})
 
     def test_link_to_domain_root_is_blocked(self):
         self.write("about/index.html", '<a href="/tags/">標籤</a>')
@@ -86,6 +86,57 @@ class CheckPublicTest(unittest.TestCase):
             '<a href="#top">頁內</a>',
         )
         self.assertEqual(self.problems(), [])
+
+    def test_same_host_link_over_http_is_blocked(self):
+        self.write(
+            "about/index.html",
+            '<link rel="canonical" href="http://example.github.io/blog/about/">',
+        )
+        self.assert_blocked("about/index.html", "http://", "應該")
+
+    def test_share_meta_with_site_urls_passes(self):
+        self.write("og.png", "圖")
+        self.write(
+            "about/index.html",
+            '<link rel="canonical" href="https://example.github.io/blog/about/">'
+            '<meta property="og:url" content="https://example.github.io/blog/about/">'
+            '<meta property="og:image" content="https://example.github.io/blog/og.png">'
+            # 不是網址的 meta 不檢查
+            '<meta property="og:title" content="/tags/">',
+        )
+        stats, problems = check(self.public, BASE_URL)
+        self.assertEqual(problems, [])
+        self.assertEqual(stats["site_urls"], 2)
+
+    def test_unquoted_share_meta_is_still_checked(self):
+        # --minify 之後的樣子
+        self.write("about/index.html", "<meta property=og:image content=/blog/og.png>")
+        self.assert_blocked("分享用的 meta", "完整網址")
+
+    def test_share_image_outside_subpath_is_blocked(self):
+        self.write(
+            "about/index.html",
+            '<meta property="og:image" content="https://example.github.io/og.png">',
+        )
+        self.assert_blocked("about/index.html", "分享用的 meta", "之外")
+
+    def test_share_image_missing_is_blocked(self):
+        self.write(
+            "about/index.html",
+            '<meta property="og:image" content="https://example.github.io/blog/og.png">',
+        )
+        self.assert_blocked("分享用的 meta", "不存在")
+
+    def test_share_url_over_http_is_blocked(self):
+        self.write(
+            "about/index.html",
+            '<meta property="og:url" content="http://example.github.io/blog/about/">',
+        )
+        self.assert_blocked("分享用的 meta", "完整網址")
+
+    def test_empty_share_meta_is_blocked(self):
+        self.write("about/index.html", '<meta property="og:image" content="">')
+        self.assert_blocked("分享用的 meta", "完整網址")
 
     def test_draft_marker_is_blocked(self):
         self.write("about/index.html", '<p class="note draft-tag">草稿</p>')

@@ -1,0 +1,13 @@
+{{- /* 一頁的說明文字：給搜尋結果、社群分享的預覽與 RSS 用。
+       文章用 front matter 的 description，沒寫就取內文開頭；其他頁面用站台的說明。
+
+       回傳的是沒有跳脫過的純文字，由用的地方依自己的格式跳脫。所以：
+       - plainify 留下的 &rsquo; 這類 HTML 實體先還原成字元
+       - 不用 truncate 截斷：它會順手做一次 HTML 跳脫，回傳的就不是純文字了 */ -}}
+{{- $desc := site.Params.description -}}
+{{- if .IsPage -}}
+  {{- with or .Description (.Summary | plainify | htmlUnescape) }}{{ $desc = . }}{{ end -}}
+{{- end -}}
+{{- $desc = trim $desc " \n" -}}
+{{- if gt (strings.RuneCount $desc) 160 }}{{ $desc = printf "%s…" (substr $desc 0 159) }}{{ end -}}
+{{- return $desc -}}

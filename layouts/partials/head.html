@@ -7,7 +7,29 @@
   {{- $title := cond .IsHome site.Title (printf "%s · %s" $pageTitle site.Title) }}
   <title>{{ $title }}</title>
 
+  {{- $desc := partial "description.html" . }}
+  <meta name="description" content="{{ $desc }}">
   <meta name="author" content="{{ site.Params.author }}">
+
+  {{- /* 404 頁沒有自己的網址（它出現在任何不存在的網址上），不給 canonical 與分享用的 meta */}}
+  {{- if ne .Kind "404" }}
+  {{- $isPost := and .IsPage (ne .Section "") }}
+  <link rel="canonical" href="{{ .Permalink }}">
+
+  {{- /* 社群分享的預覽。網址與圖都必須是完整網址，各家平台不吃相對路徑。
+         圖固定用預設那一張；標題不加站名，站名另外放在 og:site_name。 */}}
+  <meta property="og:type" content="{{ cond $isPost `article` `website` }}">
+  <meta property="og:title" content="{{ cond .IsHome site.Title $pageTitle }}">
+  <meta property="og:description" content="{{ $desc }}">
+  <meta property="og:url" content="{{ .Permalink }}">
+  <meta property="og:site_name" content="{{ site.Title }}">
+  <meta property="og:image" content="{{ "og-default.png" | absURL }}">
+  <meta property="og:image:alt" content="{{ site.Title }}：{{ site.Params.tagline }}">
+  <meta name="twitter:card" content="summary_large_image">
+  {{- if $isPost }}
+  <meta property="article:published_time" content="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+  {{- end }}
+  {{- end }}
 
   {{- $css := resources.Get "css/main.css" | minify | fingerprint }}
   <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
