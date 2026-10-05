@@ -1,6 +1,6 @@
 {{ define "main" }}
 {{ .Content }}
 {{ with site.GetPage "/link-test" }}
-<p><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>
+<p><a href="{{ "/link-test/" | relURL }}">{{ .Title }}(失敗測試)</a></p>
 {{ end }}
 {{ end }}
